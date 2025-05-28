@@ -168,73 +168,6 @@ function generatePPTXContent(document: Document): Buffer {
             page-break-after: always;
             min-height: 600px;
             padding: 40px;
-            margin-bottom: 20px;
-            background: white;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        }
-        .slide h1 {
-            font-size: 32px;
-            color: #2c5aa0;
-            border-bottom: 3px solid #2c5aa0;
-            padding-bottom: 10px;
-            margin-bottom: 30px;
-        }
-        .slide h2 {
-            font-size: 24px;
-            color: #2c5aa0;
-            margin-top: 25px;
-            margin-bottom: 15px;
-        }
-        .slide p {
-            font-size: 18px;
-            line-height: 1.6;
-            margin-bottom: 15px;
-        }
-        .slide-number {
-            position: absolute;
-            top: 10px;
-            right: 20px;
-            font-size: 14px;
-            color: #666;
-        }
-        .title-slide {
-            text-align: center;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-        }
-        .title-slide h1 {
-            color: white;
-            border-bottom: 3px solid white;
-            font-size: 48px;
-        }
-        @media print {
-            .slide {
-                page-break-after: always;
-                margin: 0;
-                box-shadow: none;
-                border: none;
-            }
-        }
-    </style>
-</head>
-<body>
-    <div class="slide title-slide">
-        <div class="slide-number">1 / ${slides.length}</div>
-        <h1>${document.title}</h1>
-        <p style="font-size: 24px; margin-top: 40px;">HappySolar AI 자동화 시스템</p>
-        <p style="font-size: 18px;">생성일: ${new Date(document.createdAt).toLocaleDateString('ko-KR')}</p>
-    </div>
-    ${slides.map((slide, index) => `
-    <div class="slide">
-        <div class="slide-number">${index + 2} / ${slides.length + 1}</div>
-        <h1>${slide.title || `슬라이드 ${index + 1}`}</h1>
-        <div style="white-space: pre-wrap;">${(slide.content || '').replace(/\n/g, '<br>')}</div>
-    </div>
-    `).join('')}
-</body>
-</html>`;px;
             margin-bottom: 40px;
             background: white;
             color: #333;
@@ -285,6 +218,14 @@ function generatePPTXContent(document: Document): Buffer {
             right: 30px;
             font-size: 12px;
             opacity: 0.7;
+        }
+        @media print {
+            .slide {
+                page-break-after: always;
+                margin: 0;
+                box-shadow: none;
+                border: none;
+            }
         }
     </style>
 </head>
