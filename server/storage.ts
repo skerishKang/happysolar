@@ -150,8 +150,7 @@ function generatePPTXContent(document: Document): Buffer {
 </p:sld>`);
 
   // Create a simple HTML-based presentation that can be viewed as PowerPoint
-  let htmlContent = `
-<!DOCTYPE html>
+  const htmlContent = `<!DOCTYPE html>
 <html>
 <head>
     <meta charset="UTF-8">
@@ -212,13 +211,6 @@ function generatePPTXContent(document: Document): Buffer {
             margin-top: 40px;
             opacity: 0.9;
         }
-        .footer {
-            position: fixed;
-            bottom: 20px;
-            right: 30px;
-            font-size: 12px;
-            opacity: 0.7;
-        }
         @media print {
             .slide {
                 page-break-after: always;
@@ -237,26 +229,21 @@ function generatePPTXContent(document: Document): Buffer {
             <p>주식회사 해피솔라</p>
             <p>생성일: ${new Date().toLocaleDateString('ko-KR')}</p>
         </div>
-    </div>`;
-
-  // Add content slides
-  slides.forEach((slide, index) => {
-    const title = slide.title || `슬라이드 ${index + 2}`;
-    const content = typeof slide.content === 'string' ? slide.content : JSON.stringify(slide.content, null, 2);
+    </div>
     
-    htmlContent += `
+    <!-- Content Slides -->${slides.map((slide, index) => `
     <div class="slide">
-        <h1>${title}</h1>
-        <div class="content">${content.replace(/\n/g, '<br>')}</div>
-    </div>`;
-  });
-
-  htmlContent += `
-    <div class="footer">
+        <h1>${slide.title || `슬라이드 ${index + 1}`}</h1>
+        <div class="content">${(slide.content || '').replace(/\n/g, '<br>')}</div>
+    </div>`).join('')}
+    
+    <div style="text-align: center; padding: 20px; font-size: 12px; color: #666;">
         HappySolar AI로 생성됨
     </div>
 </body>
 </html>`;
+
+  
 
   return Buffer.from(htmlContent, 'utf8');
 }
