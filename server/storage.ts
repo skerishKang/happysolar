@@ -1,7 +1,7 @@
 import { eq } from "drizzle-orm";
 import { db } from "./db";
 import { users, documents, company, type User, type Document, type Company, type InsertDocument } from "@shared/schema";
-import PptxGenJS from "pptxgenjs";
+const PptxGenJS = require("pptxgenjs");
 import puppeteer from "puppeteer";
 
 // Real PDF generation using puppeteer
@@ -129,7 +129,14 @@ async function generatePDFContent(document: Document): Promise<Buffer> {
   try {
     const browser = await puppeteer.launch({
       headless: true,
-      args: ['--no-sandbox', '--disable-setuid-sandbox']
+      args: [
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+        '--disable-dev-shm-usage',
+        '--disable-gpu',
+        '--disable-features=VizDisplayCompositor',
+        '--single-process'
+      ]
     });
     const page = await browser.newPage();
     await page.setContent(htmlContent, { waitUntil: 'networkidle0' });
