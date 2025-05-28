@@ -26,7 +26,7 @@ export async function generateDocument(request: DocumentGenerationRequest): Prom
   return response.json();
 }
 
-export async function downloadDocument(documentId: string, format: 'pdf' | 'pptx' = 'pdf'): Promise<void> {
+export async function downloadDocument(documentId: string, format: 'pdf' | 'pptx' = 'pptx'): Promise<void> {
   const response = await fetch(`${API_BASE}/documents/${documentId}/download?format=${format}`);
   
   if (!response.ok) {

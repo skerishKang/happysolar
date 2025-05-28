@@ -265,25 +265,6 @@ export default function DocumentGenerator({ featureId, companyInfo, onClose }: D
     });
   };
 
-  const handleDownload = async () => {
-    if (generatedDocId) {
-      try {
-        await downloadDocument(generatedDocId, 'pdf');
-        toast({
-          title: "다운로드 완료!",
-          description: "HTML 문서가 성공적으로 다운로드되었습니다.",
-        });
-      } catch (error) {
-        console.error('Download failed:', error);
-        toast({
-          title: "다운로드 실패",
-          description: "문서 다운로드 중 오류가 발생했습니다.",
-          variant: "destructive",
-        });
-      }
-    }
-  };
-
   const handlePPTDownload = async () => {
     if (generatedDocId) {
       try {
@@ -315,17 +296,10 @@ export default function DocumentGenerator({ featureId, companyInfo, onClose }: D
             <p className="text-gray-600">{template.title}이(가) 성공적으로 생성되었습니다.</p>
           </CardHeader>
           <CardContent className="flex items-center justify-center space-x-4">
-            <div className="flex space-x-2">
-                <Button 
-                  onClick={handleDownload}
-                  className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5"
-                >
-                  <Download className="w-4 h-4 mr-2" />
-                  HTML 다운로드
-                </Button>
+            <div className="flex space-x-3">
                 <Button 
                   onClick={handlePPTDownload}
-                  className="flex-1 bg-orange-600 hover:bg-orange-700 text-white font-medium py-2.5"
+                  className="bg-orange-600 hover:bg-orange-700 text-white font-medium py-2.5 px-6"
                 >
                   <FileText className="w-4 h-4 mr-2" />
                   PPT 다운로드
@@ -333,9 +307,9 @@ export default function DocumentGenerator({ featureId, companyInfo, onClose }: D
                 <Button 
                   variant="outline" 
                   onClick={onClose}
+                  className="p-2"
                 >
-                  <FileText className="w-4 h-4 mr-2" />
-                  새 문서 생성
+                  <X className="w-4 h-4" />
                 </Button>
               </div>
           </CardContent>

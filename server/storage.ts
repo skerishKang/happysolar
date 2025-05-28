@@ -36,8 +36,17 @@ function generatePDFContent(document: Document): Buffer {
 
 // Simple PPTX generation using XML structure
 function generatePPTXContent(document: Document): Buffer {
+  // Handle content whether it's string or object
+  let contentText = '';
+  if (typeof document.content === 'string') {
+    contentText = document.content;
+  } else if (document.content && typeof document.content === 'object') {
+    // If content is an object, extract text from it
+    contentText = JSON.stringify(document.content, null, 2);
+  }
+  
   // Create basic PowerPoint XML structure
-  const slides = document.content.split('\n\n').filter(slide => slide.trim());
+  const slides = contentText.split('\n\n').filter(slide => slide.trim());
   
   let pptxContent = `<?xml version="1.0" encoding="UTF-8"?>
 <presentation xmlns="http://schemas.openxmlformats.org/presentationml/2006/main">
@@ -48,7 +57,7 @@ function generatePPTXContent(document: Document): Buffer {
     pptxContent += `
     <slide id="${index + 1}">
       <title>슬라이드 ${index + 1}</title>
-      <content>${slide}</content>
+      <content><![CDATA[${slide}]]></content>
     </slide>`;
   });
 
