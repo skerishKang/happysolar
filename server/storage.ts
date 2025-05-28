@@ -155,8 +155,20 @@ async function generatePDFContent(document: Document): Promise<Buffer> {
     return Buffer.from(pdfBuffer);
   } catch (error) {
     console.error('PDF generation failed:', error);
-    // Fallback to HTML if PDF generation fails
-    return Buffer.from(htmlContent, 'utf8');
+    // Create a simple text-based PDF fallback
+    const textContent = `
+${document.title}
+
+생성일: ${new Date(document.createdAt).toLocaleDateString('ko-KR')}
+
+${contentText}
+
+---
+주식회사 해피솔라
+AI 자동화 문서 생성 시스템
+    `.trim();
+    
+    return Buffer.from(textContent, 'utf8');
   }
 }
 
@@ -249,7 +261,7 @@ async function generatePPTXContent(document: Document): Promise<Buffer> {
   });
 
   // Generate and return the PPTX file as buffer
-  return pptx.writeSync() as Buffer;
+  return await pptx.write();
 }
 
 interface IStorage {
