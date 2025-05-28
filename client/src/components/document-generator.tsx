@@ -229,7 +229,7 @@ export default function DocumentGenerator({ featureId, companyInfo, onClose }: D
   const handleDrop = (e: React.DragEvent, fieldIndex: number) => {
     e.preventDefault();
     setDragOver(null);
-    
+
     const files = e.dataTransfer.files;
     if (files && files.length > 0) {
       const file = files[0];
@@ -243,7 +243,7 @@ export default function DocumentGenerator({ featureId, companyInfo, onClose }: D
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     // Validate required fields
     const requiredFields = template.fields.filter(field => field.required);
     const missingFields = requiredFields.filter((field, index) => 
@@ -265,9 +265,41 @@ export default function DocumentGenerator({ featureId, companyInfo, onClose }: D
     });
   };
 
-  const handleDownload = () => {
+  const handleDownload = async () => {
     if (generatedDocId) {
-      downloadMutation.mutate(generatedDocId);
+      try {
+        await downloadDocument(generatedDocId, 'pdf');
+        toast({
+          title: "다운로드 완료!",
+          description: "HTML 문서가 성공적으로 다운로드되었습니다.",
+        });
+      } catch (error) {
+        console.error('Download failed:', error);
+        toast({
+          title: "다운로드 실패",
+          description: "문서 다운로드 중 오류가 발생했습니다.",
+          variant: "destructive",
+        });
+      }
+    }
+  };
+
+  const handlePPTDownload = async () => {
+    if (generatedDocId) {
+      try {
+        await downloadDocument(generatedDocId, 'pptx');
+        toast({
+          title: "PPT 다운로드 완료!",
+          description: "PowerPoint 문서가 성공적으로 다운로드되었습니다.",
+        });
+      } catch (error) {
+        console.error('PPT Download failed:', error);
+        toast({
+          title: "PPT 다운로드 실패",
+          description: "PowerPoint 다운로드 중 오류가 발생했습니다.",
+          variant: "destructive",
+        });
+      }
     }
   };
 
@@ -283,22 +315,29 @@ export default function DocumentGenerator({ featureId, companyInfo, onClose }: D
             <p className="text-gray-600">{template.title}이(가) 성공적으로 생성되었습니다.</p>
           </CardHeader>
           <CardContent className="flex items-center justify-center space-x-4">
-            <Button 
-              onClick={handleDownload}
-              disabled={downloadMutation.isPending}
-              className="bg-blue-600 hover:bg-blue-700 text-white"
-            >
-              {downloadMutation.isPending ? (
-                <LoadingSpinner className="w-4 h-4 mr-2" />
-              ) : (
-                <Download className="w-4 h-4 mr-2" />
-              )}
-              PDF 다운로드
-            </Button>
-            <Button variant="outline" onClick={onClose}>
-              <FileText className="w-4 h-4 mr-2" />
-              새 문서 생성
-            </Button>
+            <div className="flex space-x-2">
+                <Button 
+                  onClick={handleDownload}
+                  className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5"
+                >
+                  <Download className="w-4 h-4 mr-2" />
+                  HTML 다운로드
+                </Button>
+                <Button 
+                  onClick={handlePPTDownload}
+                  className="flex-1 bg-orange-600 hover:bg-orange-700 text-white font-medium py-2.5"
+                >
+                  <FileText className="w-4 h-4 mr-2" />
+                  PPT 다운로드
+                </Button>
+                <Button 
+                  variant="outline" 
+                  onClick={onClose}
+                >
+                  <FileText className="w-4 h-4 mr-2" />
+                  새 문서 생성
+                </Button>
+              </div>
           </CardContent>
         </Card>
       </div>
@@ -378,11 +417,11 @@ export default function DocumentGenerator({ featureId, companyInfo, onClose }: D
                 <FileText className="w-5 h-5 text-indigo-600" />
                 <span>문서 생성 정보 입력</span>
               </h3>
-              
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {template.fields.map((field, index) => {
                   const fieldKey = `field_${index}`;
-                  
+
                   if (field.type === 'file') {
                     const isAudioFile = featureId === 'minutes' && field.label.includes('음성');
                     return (
