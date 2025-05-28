@@ -400,6 +400,12 @@ export default function DocumentGenerator({ featureId, companyInfo, onClose }: D
                           onDragOver={(e) => handleDragOver(e, index)}
                           onDragLeave={handleDragLeave}
                           onDrop={(e) => handleDrop(e, index)}
+                          onClick={() => {
+                            const fileInput = document.getElementById(`file-input-${index}`) as HTMLInputElement;
+                            if (fileInput) {
+                              fileInput.click();
+                            }
+                          }}
                         >
                           <div className="text-center">
                             {isAudioFile ? (
@@ -442,18 +448,34 @@ export default function DocumentGenerator({ featureId, companyInfo, onClose }: D
                                 </div>
                               </div>
                             )}
-                            <Input
+                            <input
                               id={`file-input-${index}`}
                               type="file"
                               accept={isAudioFile ? "audio/*" : "*"}
-                              onChange={(e) => handleInputChange(index, e.target.files?.[0])}
-                              className="hidden"
+                              onChange={(e) => {
+                                const file = e.target.files?.[0];
+                                if (file) {
+                                  handleInputChange(index, file);
+                                  toast({
+                                    title: "파일 업로드 완료",
+                                    description: `${file.name} 파일이 업로드되었습니다.`,
+                                  });
+                                }
+                              }}
+                              style={{ display: 'none' }}
                             />
                             <Button
                               type="button"
                               variant="outline"
                               className="mt-3 w-full bg-white/80 hover:bg-white border-indigo-200 hover:border-indigo-300"
-                              onClick={() => document.getElementById(`file-input-${index}`)?.click()}
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                const fileInput = document.getElementById(`file-input-${index}`) as HTMLInputElement;
+                                if (fileInput) {
+                                  fileInput.click();
+                                }
+                              }}
                             >
                               <Upload className="w-4 h-4 mr-2" />
                               파일 선택
