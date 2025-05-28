@@ -1,10 +1,11 @@
 import { eq } from "drizzle-orm";
 import { db } from "./db";
 import { users, documents, company, type User, type Document, type Company, type InsertDocument } from "@shared/schema";
-import PptxGenJS from "pptxgenjs";
+const PptxGenJS = require("pptxgenjs");
+import puppeteer from "puppeteer";
 
-// Enhanced PDF generation with proper formatting
-function generatePDFContent(document: Document): Buffer {
+// Real PDF generation using puppeteer
+async function generatePDFContent(document: Document): Promise<Buffer> {
   // Parse content whether it's string or object
   let contentText = '';
   
@@ -124,7 +125,33 @@ function generatePDFContent(document: Document): Buffer {
     </div>
 </body>
 </html>`;
-  return Buffer.from(htmlContent, 'utf8');
+
+  try {
+    const browser = await puppeteer.launch({
+      headless: true,
+      args: ['--no-sandbox', '--disable-setuid-sandbox']
+    });
+    const page = await browser.newPage();
+    await page.setContent(htmlContent, { waitUntil: 'networkidle0' });
+    
+    const pdfBuffer = await page.pdf({
+      format: 'A4',
+      margin: {
+        top: '2cm',
+        right: '2cm',
+        bottom: '2cm',
+        left: '2cm'
+      },
+      printBackground: true
+    });
+    
+    await browser.close();
+    return Buffer.from(pdfBuffer);
+  } catch (error) {
+    console.error('PDF generation failed:', error);
+    // Fallback to HTML if PDF generation fails
+    return Buffer.from(htmlContent, 'utf8');
+  }
 }
 
 // Real PPTX generation using pptxgenjs library
@@ -308,7 +335,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async generatePDF(document: Document): Promise<Buffer> {
-    return generatePDFContent(document);
+    return await generatePDFContent(document);
   }
 
   async generatePPTX(document: Document): Promise<Buffer> {
