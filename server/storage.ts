@@ -37,16 +37,25 @@ function generatePDFContent(document: Document): Buffer {
 // Simple PPTX generation using minimal PowerPoint structure
 function generatePPTXContent(document: Document): Buffer {
   // Handle content whether it's string or object
-  let contentText = '';
-  if (typeof document.content === 'string') {
-    contentText = document.content;
-  } else if (document.content && typeof document.content === 'object') {
-    // If content is an object, extract text from it
-    contentText = JSON.stringify(document.content, null, 2);
-  }
+  let slides: any[] = [];
   
-  // Create slides from content
-  const slides = contentText.split('\n\n').filter(slide => slide.trim());
+  if (typeof document.content === 'string') {
+    slides = document.content.split('\n\n').filter(slide => slide.trim()).map((slide, index) => ({
+      slideNumber: index + 1,
+      title: slide.split('\n')[0] || `슬라이드 ${index + 1}`,
+      content: slide
+    }));
+  } else if (document.content && Array.isArray(document.content)) {
+    // If content is an array of slide objects
+    slides = document.content;
+  } else if (document.content && typeof document.content === 'object') {
+    // If content is an object, try to extract slides
+    if (document.content.content && Array.isArray(document.content.content)) {
+      slides = document.content.content;
+    } else {
+      slides = [{ slideNumber: 1, title: document.title, content: JSON.stringify(document.content, null, 2) }];
+    }
+  }
   
   // Create a simple HTML-based presentation that can be saved as .pptx
   let htmlContent = `
@@ -132,14 +141,13 @@ function generatePPTXContent(document: Document): Buffer {
 
   // Add content slides
   slides.forEach((slide, index) => {
-    const lines = slide.split('\n');
-    const title = lines[0] || `슬라이드 ${index + 2}`;
-    const content = lines.slice(1).join('\n') || slide;
+    const title = slide.title || `슬라이드 ${index + 2}`;
+    const content = typeof slide.content === 'string' ? slide.content : JSON.stringify(slide.content, null, 2);
     
     htmlContent += `
     <div class="slide">
         <h1>${title}</h1>
-        <div class="content">${content}</div>
+        <div class="content">${content.replace(/\n/g, '<br>')}</div>
     </div>`;
   });
 

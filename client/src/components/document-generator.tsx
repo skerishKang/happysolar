@@ -168,12 +168,45 @@ export default function DocumentGenerator({ featureId, companyInfo, onClose }: D
   const [dragOver, setDragOver] = useState<number | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [uploadedFiles, setUploadedFiles] = useState<any[]>([]);
 
   const template = featureTemplates[featureId];
   if (!template) return null;
 
+  const handleFileUpload = async (files: FileList) => {
+    const formData = new FormData();
+    Array.from(files).forEach(file => {
+      formData.append('files', file);
+    });
+
+    try {
+      const response = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        setUploadedFiles(prev => [...prev, ...result.files]);
+        toast({
+          title: "파일 업로드 완료",
+          description: `${files.length}개 파일이 업로드되었습니다.`,
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "파일 업로드 실패",
+        description: "파일 업로드 중 오류가 발생했습니다.",
+        variant: "destructive",
+      });
+    }
+  };
+
   const generateMutation = useMutation({
-    mutationFn: (data: DocumentGenerationRequest) => generateDocument(data),
+    mutationFn: (data: any) => generateDocument({
+      ...data,
+      uploadedFiles
+    }),
     onSuccess: (result) => {
       setGeneratedDocId(result.documentId);
       queryClient.invalidateQueries({ queryKey: ['/api/documents/recent'] });
@@ -385,6 +418,56 @@ export default function DocumentGenerator({ featureId, companyInfo, onClose }: D
               </div>
             </div>
 
+            {/* File Upload Section */}
+            <div className="mb-6">
+              <Label className="text-lg font-semibold text-gray-900 mb-3 block">
+                📎 참고 자료 업로드
+              </Label>
+              <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+                <Upload className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+                <div className="space-y-2">
+                  <input
+                    type="file"
+                    multiple
+                    accept=".pdf,.txt,.md,.jpg,.jpeg,.png,.gif"
+                    onChange={(e) => e.target.files && handleFileUpload(e.target.files)}
+                    className="hidden"
+                    id="file-upload"
+                  />
+                  <label
+                    htmlFor="file-upload"
+                    className="cursor-pointer text-blue-600 hover:text-blue-500 font-medium"
+                  >
+                    클릭하여 파일 업로드 또는 드래그 앤 드롭
+                  </label>
+                  <p className="text-sm text-gray-500">
+                    PDF, 텍스트, 이미지 파일 지원 (최대 10MB)
+                  </p>
+                </div>
+              </div>
+
+              {uploadedFiles.length > 0 && (
+                <div className="mt-4">
+                  <h4 className="font-medium text-gray-900 mb-2">업로드된 파일:</h4>
+                  <div className="space-y-2">
+                    {uploadedFiles.map((file, index) => (
+                      <div key={index} className="flex items-center justify-between bg-gray-50 p-2 rounded">
+                        <span className="text-sm text-gray-700">{file.originalName}</span>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setUploadedFiles(prev => prev.filter((_, i) => i !== index))}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
             {/* Dynamic Form Fields */}
             <div className="space-y-6">
               <h3 className="text-lg font-bold text-gray-900 flex items-center space-x-2">
@@ -478,8 +561,7 @@ export default function DocumentGenerator({ featureId, companyInfo, onClose }: D
                               style={{ display: 'none' }}
                             />
                             <Button
-                              type="button"
-                              variant="outline"
+                              type="button"variant="outline"
                               className="mt-3 w-full bg-white/80 hover:bg-white border-indigo-200 hover:border-indigo-300"
                               onClick={(e) => {
                                 e.preventDefault();

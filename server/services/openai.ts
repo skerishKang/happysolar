@@ -15,17 +15,18 @@ export interface DocumentGenerationParams {
     businessType: string;
     representative: string;
   };
+  uploadedFiles: { originalName: string; type: string; content: string; }[];
 }
 
 export async function generateDocumentContent(params: DocumentGenerationParams): Promise<{
   title: string;
   content: any;
 }> {
-  const { type, formData, companyInfo } = params;
+  const { type, formData, companyInfo, uploadedFiles } = params;
 
   try {
-    const prompt = createPromptForDocumentType(type, formData, companyInfo);
-    
+    const prompt = createPromptForDocumentType(type, formData, companyInfo, uploadedFiles);
+
     const response = await openai.chat.completions.create({
       model: "gpt-4o",
       messages: [
@@ -47,7 +48,7 @@ export async function generateDocumentContent(params: DocumentGenerationParams):
     });
 
     const result = JSON.parse(response.choices[0].message.content || '{}');
-    
+
     return {
       title: result.title || `${getDocumentTypeTitle(type)}_${Date.now()}`,
       content: result.content || result
@@ -58,36 +59,29 @@ export async function generateDocumentContent(params: DocumentGenerationParams):
   }
 }
 
-function createPromptForDocumentType(type: string, formData: Record<string, any>, companyInfo: any): string {
+function createPromptForDocumentType(type: string, formData: Record<string, any>, companyInfo: any, uploadedFiles: { originalName: string; type: string; content: string; }[]): string {
   const baseCompanyInfo = `
 회사 정보:
-- 회사명: ${companyInfo.name} (팜솔라, 해피솔라, 탑솔라 그룹)
+- 회사명: ${companyInfo.name}
 - 사업자등록번호: ${companyInfo.businessNumber}
 - 주소: ${companyInfo.address}
-- 업종: 태양광 발전사업, 신재생에너지 설비 시공 및 유지보수
+- 업종: ${companyInfo.businessType}
 - 대표자: ${companyInfo.representative}
-- 전화: 062-575-4745, 팩스: 062-443-4237
-- 이메일: sbl4745@hanmail.net, 홈페이지: http://www.solarvill.com
-
-그룹 회사 정보:
-- (주)팜솔라: 2019년 설립, 사업자번호 527-88-01268, 대표 조종률, 전기공사업 면허 전남-01755호
-- (주)해피솔라: 2023년 설립, 사업자번호 578-87-02666, 대표 노유봉, 전기공사업 면허 광주-01455호  
-- (주)탑솔라: 2024년 설립, 사업자번호 787-88-02831, 대표 임정철, 전기공사업 면허 광주-01521호
-
-사업 실적:
-- 그룹 전체 연매출 90억원 이상
-- ISO 9001/14001/45001 인증 보유
-- 태양광 발전소 500MW 이상 시공 경험
-- 주요 고객: 농협, 축협, 지자체, 기업체
-- 전문 분야: 건물형, 축사형, 영농형, 노지형 태양광 발전소
-
-기술 특징:
-- 양면모듈 전문 시공 (효율 10-15% 향상)
-- 진코(Jinko) 625W 고효율 모듈 사용
-- 화웨이(Huawei) 인버터 전문 설치
-- 구조물 용융아연도금 처리로 내구성 극대화
-- ESS(에너지저장장치) 연계 시스템 구축 가능
 `;
+
+  // Add uploaded file content
+  let fileContent = '';
+  if (uploadedFiles.length > 0) {
+    fileContent = `
+업로드된 참고 자료:
+${uploadedFiles.map((file, index) => `
+${index + 1}. ${file.originalName} (${file.type}):
+${file.content}
+`).join('\n')}
+
+위 참고 자료의 내용을 반드시 포함하여 문서를 작성해주세요.
+`;
+  }
 
   switch (type) {
     case 'quotation':
@@ -161,7 +155,51 @@ JSON 형식으로 전문적인 견적서를 생성해주세요:
     },
     "fullText": "고객 제출용 완성된 견적서 전체 내용"
   }
-}처 회사명",
+}${fileContent}`;
+
+    case 'tax-invoice':
+      return `${baseCompanyInfo}
+
+🖋️ 국세청 양식 완벽 준수 전자세금계산서 🖋️
+
+매입처 정보:
+- 매입처 회사명: ${formData.field_0 || ''}
+- 사업자등록번호: ${formData.field_1 || ''}
+- 대표자: ${formData.field_2 || ''}
+- 주소: ${formData.field_3 || ''}
+
+세금계산서 정보:
+- 작성일자: ${formData.field_4 || ''}
+- 품목: ${formData.field_5 || ''} 외
+- 공급가액: ${formData.field_6 || ''}
+- 세액: ${formData.field_7 || ''}
+
+🧮 AI 정밀 검증 기능:
+1. 국세청 최신 고시 완벽 반영
+2. 계산 오류 0% (세율 자동 검증)
+3. 전자세금계산서 양식 자동 변환
+4. 팜솔라 그룹 정보 자동 입력
+5. 세무/회계 시스템 연동
+
+JSON 형식으로 전자세금계산서를 생성해주세요:
+{
+  "title": "세금계산서_[매입처]_[날짜]",
+  "content": {
+    "documentType": "전자세금계산서",
+    "invoiceInfo": {
+      "invoiceNumber": "세금계산서 번호",
+      "issueDate": "작성일자",
+      "supplyDate": "공급일자",
+      "currency": "통화"
+    },
+    "seller": {
+      "companyName": "공급자(팜솔라그룹) 회사명",
+      "businessNumber": "공급자 사업자등록번호",
+      "representative": "공급자 대표자",
+      "address": "공급자 주소"
+    },
+    "buyer": {
+      "companyName": "매입처 회사명",
       "businessNumber": "매입처 사업자등록번호",
       "representative": "매입처 대표자",
       "address": "매입처 주소"
@@ -190,7 +228,7 @@ JSON 형식으로 전문적인 견적서를 생성해주세요:
     },
     "fullText": "국세청 표준 양식에 완벽 준수하는 세금계산서 전체 내용"
   }
-}`;
+}${fileContent}`;
 
     case 'transaction-statement':
       return `${baseCompanyInfo}
@@ -246,7 +284,7 @@ JSON 형식으로 전문적인 거래명세서를 생성해주세요:
     },
     "fullText": "실제 거래처 제출용 완성된 거래명세서 전체 내용"
   }
-}`;
+}${fileContent}`;
 
     case 'contract':
       return `${baseCompanyInfo}
@@ -310,7 +348,7 @@ JSON 형식으로 전문적인 계약서를 생성해주세요:
     },
     "fullText": "법무 검토 완료된 실제 계약용 전체 문서"
   }
-}`;
+}${fileContent}`;
 
     case 'presentation':
       return `${baseCompanyInfo}
@@ -367,7 +405,7 @@ JSON 형식으로 전문적인 프레젠테이션을 생성해주세요:
     },
     "fullText": "완성된 프레젠테이션 전체 스크립트 및 슬라이드 내용"
   }
-}`;
+}${fileContent}`;
 
     case 'proposal':
       return `${baseCompanyInfo}
@@ -456,7 +494,7 @@ JSON 형식으로 전문적인 사업기획서를 생성해주세요:
     },
     "fullText": "실제 투자 검토용 완성된 사업기획서 전체 문서"
   }
-}`;
+}${fileContent}`;
 
     case 'minutes':
       return `${baseCompanyInfo}
@@ -532,7 +570,7 @@ JSON 형식으로 전문적인 회의록을 생성해주세요:
     },
     "fullText": "네이버 클로바급 정확도로 완성된 회의록 전체 문서"
   }
-}`;
+}${fileContent}`;
 
     case 'email':
       return `${baseCompanyInfo}
@@ -612,7 +650,7 @@ JSON 형식으로 전문적인 이메일을 생성해주세요:
     },
     "fullText": "해외 거래처와 실제 소통 가능한 완성된 이메일 전체 문서"
   }
-}`;
+}${fileContent}`;
 
     default:
       throw new Error(`Unsupported document type: ${type}`);
@@ -629,6 +667,6 @@ function getDocumentTypeTitle(type: string): string {
     'minutes': '회의록',
     'email': '이메일'
   };
-  
+
   return titles[type] || '문서';
 }

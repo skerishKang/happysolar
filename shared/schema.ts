@@ -45,6 +45,7 @@ export const insertDocumentSchema = createInsertSchema(documents).pick({
 export const documentGenerationSchema = z.object({
   type: z.enum(['quotation', 'transaction-statement', 'contract', 'presentation', 'proposal', 'minutes', 'email']),
   formData: z.record(z.any()),
+  uploadedFiles: z.array(z.any()).optional(),
 });
 
 export type InsertUser = z.infer<typeof insertUserSchema>;

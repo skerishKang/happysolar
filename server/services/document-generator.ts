@@ -1,17 +1,22 @@
 
 import { storage } from "../storage";
 import { generateDocumentContent } from "./openai";
+import { processUploadedFiles, type ProcessedFile } from "./file-processor";
 
-export async function generateDocument(type: string, formData: Record<string, any>): Promise<string> {
+export async function generateDocument(type: string, formData: Record<string, any>, uploadedFiles: any[] = []): Promise<string> {
   try {
     // Get company info from storage
     const companyInfo = await storage.getCompanyInfo();
+
+    // Process uploaded files
+    const processedFiles = await processUploadedFiles(uploadedFiles);
 
     // Generate document content using OpenAI
     const result = await generateDocumentContent({
       type,
       formData,
-      companyInfo
+      companyInfo,
+      uploadedFiles: processedFiles
     });
     
     // Create document record in database

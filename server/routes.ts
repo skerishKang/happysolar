@@ -3,8 +3,42 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { documentGenerationSchema } from "@shared/schema";
 import { generateDocument } from "./services/document-generator";
+import multer from "multer";
+import path from "path";
+import fs from "fs";
+
+// Configure multer for file uploads
+const upload = multer({ 
+  dest: 'uploads/',
+  limits: {
+    fileSize: 10 * 1024 * 1024 // 10MB limit
+  }
+});
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // File upload endpoint
+  app.post("/api/upload", upload.array('files', 10), async (req, res) => {
+    try {
+      const files = req.files as Express.Multer.File[];
+      const fileInfos = [];
+      
+      for (const file of files) {
+        const fileInfo = {
+          originalName: file.originalname,
+          filename: file.filename,
+          path: file.path,
+          mimetype: file.mimetype,
+          size: file.size
+        };
+        fileInfos.push(fileInfo);
+      }
+      
+      res.json({ files: fileInfos });
+    } catch (error) {
+      console.error("Error uploading files:", error);
+      res.status(500).json({ message: "File upload failed" });
+    }
+  });
   // Company information endpoint
   app.get("/api/company", async (req, res) => {
     try {
@@ -44,7 +78,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const validatedData = documentGenerationSchema.parse(req.body);
       
       // Generate document using AI - returns document ID
-      const documentId = await generateDocument(validatedData.type, validatedData.formData);
+      const documentId = await generateDocument(validatedData.type, validatedData.formData, validatedData.uploadedFiles || []);
       
       // Get the saved document
       const savedDoc = await storage.getDocument(documentId);
