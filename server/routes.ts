@@ -113,14 +113,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .substring(0, 20);
       
       const timestamp = new Date().toISOString().slice(0, 10).replace(/-/g, '');
-      const filename = `presentation_${safeTitle || 'document'}_${timestamp}.html`;
       
-      // Generate PowerPoint-style HTML file
-      const pptxBuffer = await storage.generatePPTX(document);
-      
-      res.setHeader('Content-Type', 'text/html; charset=utf-8');
-      res.setHeader('Content-Disposition', `attachment; filename=${filename}`);
-      res.send(pptxBuffer);
+      if (format === 'pptx') {
+        const filename = `presentation_${safeTitle || 'document'}_${timestamp}.pptx`;
+        
+        // Generate real PowerPoint file
+        const pptxBuffer = await storage.generatePPTX(document);
+        
+        res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.presentationml.presentation');
+        res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+        res.send(pptxBuffer);
+      } else {
+        const filename = `document_${safeTitle || 'document'}_${timestamp}.pdf`;
+        
+        // Generate PDF file
+        const pdfBuffer = await storage.generatePDF(document);
+        
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+        res.send(pdfBuffer);
+      }
     } catch (error) {
       console.error("Error downloading document:", error);
       res.status(500).json({ message: "Failed to download document" });
