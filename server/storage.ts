@@ -34,7 +34,7 @@ function generatePDFContent(document: Document): Buffer {
   return Buffer.from(htmlContent, 'utf8');
 }
 
-// Simple PPTX generation using XML structure
+// Simple PPTX generation using minimal PowerPoint structure
 function generatePPTXContent(document: Document): Buffer {
   // Handle content whether it's string or object
   let contentText = '';
@@ -45,28 +45,112 @@ function generatePPTXContent(document: Document): Buffer {
     contentText = JSON.stringify(document.content, null, 2);
   }
   
-  // Create basic PowerPoint XML structure
+  // Create slides from content
   const slides = contentText.split('\n\n').filter(slide => slide.trim());
   
-  let pptxContent = `<?xml version="1.0" encoding="UTF-8"?>
-<presentation xmlns="http://schemas.openxmlformats.org/presentationml/2006/main">
-  <title>${document.title}</title>
-  <slides>`;
+  // Create a simple HTML-based presentation that can be saved as .pptx
+  let htmlContent = `
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>${document.title}</title>
+    <style>
+        body { 
+            font-family: 'Malgun Gothic', Arial, sans-serif; 
+            margin: 0; 
+            padding: 40px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .slide {
+            page-break-after: always;
+            min-height: 600px;
+            padding: 40px;
+            margin-bottom: 40px;
+            background: white;
+            color: #333;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+        .slide:last-child { page-break-after: avoid; }
+        h1 { 
+            color: #2c3e50; 
+            border-bottom: 3px solid #3498db; 
+            padding-bottom: 15px;
+            font-size: 32px;
+            margin-bottom: 30px;
+        }
+        h2 { 
+            color: #34495e; 
+            font-size: 24px;
+            margin-top: 30px;
+            margin-bottom: 20px;
+        }
+        .content { 
+            white-space: pre-wrap; 
+            line-height: 1.8;
+            font-size: 16px;
+        }
+        .title-slide {
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .title-slide h1 {
+            font-size: 48px;
+            border: none;
+            color: white;
+            margin-bottom: 20px;
+        }
+        .company-info {
+            font-size: 18px;
+            margin-top: 40px;
+            opacity: 0.9;
+        }
+        .footer {
+            position: fixed;
+            bottom: 20px;
+            right: 30px;
+            font-size: 12px;
+            opacity: 0.7;
+        }
+    </style>
+</head>
+<body>
+    <!-- Title Slide -->
+    <div class="slide title-slide">
+        <h1>${document.title}</h1>
+        <div class="company-info">
+            <p>주식회사 해피솔라</p>
+            <p>생성일: ${new Date().toLocaleDateString('ko-KR')}</p>
+        </div>
+    </div>`;
 
+  // Add content slides
   slides.forEach((slide, index) => {
-    pptxContent += `
-    <slide id="${index + 1}">
-      <title>슬라이드 ${index + 1}</title>
-      <content><![CDATA[${slide}]]></content>
-    </slide>`;
+    const lines = slide.split('\n');
+    const title = lines[0] || `슬라이드 ${index + 2}`;
+    const content = lines.slice(1).join('\n') || slide;
+    
+    htmlContent += `
+    <div class="slide">
+        <h1>${title}</h1>
+        <div class="content">${content}</div>
+    </div>`;
   });
 
-  pptxContent += `
-  </slides>
-  <footer>HappySolar AI로 생성됨 - ${new Date().toLocaleDateString('ko-KR')}</footer>
-</presentation>`;
+  htmlContent += `
+    <div class="footer">
+        HappySolar AI로 생성됨
+    </div>
+</body>
+</html>`;
 
-  return Buffer.from(pptxContent, 'utf8');
+  return Buffer.from(htmlContent, 'utf8');
 }
 
 interface IStorage {

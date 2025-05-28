@@ -79,12 +79,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .substring(0, 20);  // Limit length
       
       const timestamp = new Date().toISOString().slice(0, 10).replace(/-/g, '');
-      const filename = `PPT_${safeTitle || 'document'}_${timestamp}.pptx`;
+      const filename = `PPT_${safeTitle || 'document'}_${timestamp}.html`;
       
-      // Generate PowerPoint file
+      // Generate PowerPoint-style HTML file
       const pptxBuffer = await storage.generatePPTX(document);
       
-      res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.presentationml.presentation');
+      res.setHeader('Content-Type', 'text/html; charset=utf-8');
       res.setHeader('Content-Disposition', `attachment; filename*=UTF-8''${encodeURIComponent(filename)}`);
       res.send(pptxBuffer);
     } catch (error) {
