@@ -1,7 +1,6 @@
 
 import fs from 'fs';
 import path from 'path';
-import pdfParse from 'pdf-parse';
 
 export interface ProcessedFile {
   originalName: string;
@@ -21,9 +20,15 @@ export async function processUploadedFiles(files: any[]): Promise<ProcessedFile[
       
       if (ext === '.pdf') {
         type = 'pdf';
-        const dataBuffer = fs.readFileSync(filePath);
-        const pdfData = await pdfParse(dataBuffer);
-        content = pdfData.text;
+        try {
+          const pdfParse = (await import('pdf-parse')).default;
+          const dataBuffer = fs.readFileSync(filePath);
+          const pdfData = await pdfParse(dataBuffer);
+          content = pdfData.text;
+        } catch (error) {
+          console.error('PDF parsing error:', error);
+          content = `[PDF 파일 처리 오류: ${file.originalname}]`;
+        }
       } else if (ext === '.txt' || ext === '.md') {
         type = 'text';
         content = fs.readFileSync(filePath, 'utf8');
