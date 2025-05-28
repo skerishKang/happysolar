@@ -30,7 +30,9 @@ export async function downloadDocument(documentId: string, format: 'pdf' | 'pptx
   const response = await fetch(`${API_BASE}/documents/${documentId}/download?format=${format}`);
   
   if (!response.ok) {
-    throw new Error('Failed to download document');
+    const errorData = await response.text();
+    console.error('Download error:', errorData);
+    throw new Error(`다운로드 실패: ${response.status}`);
   }
 
   const blob = await response.blob();
@@ -38,8 +40,19 @@ export async function downloadDocument(documentId: string, format: 'pdf' | 'pptx
   const a = document.createElement('a');
   a.style.display = 'none';
   a.href = url;
-  const extension = format === 'pptx' ? 'pptx' : 'pdf';
-  a.download = `document_${documentId}.${extension}`;
+  
+  // Get filename from Content-Disposition header if available
+  const contentDisposition = response.headers.get('Content-Disposition');
+  let filename = `document_${documentId}.${format === 'pptx' ? 'pptx' : 'html'}`;
+  
+  if (contentDisposition) {
+    const filenameMatch = contentDisposition.match(/filename="(.+)"/);
+    if (filenameMatch) {
+      filename = filenameMatch[1];
+    }
+  }
+  
+  a.download = filename;
   document.body.appendChild(a);
   a.click();
   window.URL.revokeObjectURL(url);

@@ -73,20 +73,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Document not found" });
       }
 
-      // Encode filename for proper header handling
-      const safeFilename = encodeURIComponent(document.title).replace(/'/g, '%27');
+      // Create safe filename by removing problematic characters
+      const safeTitle = document.title.replace(/[^\w가-힣\s-]/g, '').replace(/\s+/g, '_');
+      const timestamp = new Date().toISOString().slice(0, 10);
       
-      if (format === 'pptx' && document.type === 'presentation') {
+      if (format === 'pptx') {
         // Generate PowerPoint file
         const pptxBuffer = await storage.generatePPTX(document);
-        res.setHeader('Content-Type', 'application/octet-stream');
-        res.setHeader('Content-Disposition', `attachment; filename="${document.title.replace(/[^a-zA-Z0-9가-힣]/g, '_')}.pptx"`);
+        const filename = `${safeTitle}_${timestamp}.pptx`;
+        res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.presentationml.presentation');
+        res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
         res.send(pptxBuffer);
       } else {
         // Generate HTML file that can be viewed as PDF
         const htmlBuffer = await storage.generatePDF(document);
+        const filename = `${safeTitle}_${timestamp}.html`;
         res.setHeader('Content-Type', 'text/html; charset=utf-8');
-        res.setHeader('Content-Disposition', `attachment; filename="${document.title.replace(/[^a-zA-Z0-9가-힣]/g, '_')}.html"`);
+        res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
         res.send(htmlBuffer);
       }
     } catch (error) {

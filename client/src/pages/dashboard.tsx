@@ -406,17 +406,15 @@ export default function Dashboard() {
                     >
                       <Download className="w-4 h-4" />
                     </Button>
-                    {doc.type === 'presentation' && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleDownload(doc.id, 'pptx')}
-                        className="text-gray-500 hover:text-orange-600"
-                        title="PowerPoint 형식으로 다운로드"
-                      >
-                        <Presentation className="w-4 h-4" />
-                      </Button>
-                    )}
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleDownload(doc.id, 'pptx')}
+                      className="text-gray-500 hover:text-orange-600"
+                      title="PowerPoint 형식으로 다운로드"
+                    >
+                      <Presentation className="w-4 h-4" />
+                    </Button>
                     <Button
                       variant="ghost"
                       size="sm"
