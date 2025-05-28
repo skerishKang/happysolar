@@ -1,0 +1,96 @@
+import type { Express } from "express";
+import { createServer, type Server } from "http";
+import { storage } from "./storage";
+import { documentGenerationSchema } from "@shared/schema";
+import { generateDocument } from "./services/document-generator";
+
+export async function registerRoutes(app: Express): Promise<Server> {
+  // Company information endpoint
+  app.get("/api/company", async (req, res) => {
+    try {
+      const companyInfo = await storage.getCompanyInfo();
+      res.json(companyInfo);
+    } catch (error) {
+      console.error("Error fetching company info:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Document statistics endpoint
+  app.get("/api/documents/stats", async (req, res) => {
+    try {
+      const stats = await storage.getDocumentStats();
+      res.json(stats);
+    } catch (error) {
+      console.error("Error fetching document stats:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Recent documents endpoint
+  app.get("/api/documents/recent", async (req, res) => {
+    try {
+      const recentDocs = await storage.getRecentDocuments(10);
+      res.json(recentDocs);
+    } catch (error) {
+      console.error("Error fetching recent documents:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Document generation endpoint
+  app.post("/api/documents/generate", async (req, res) => {
+    try {
+      const validatedData = documentGenerationSchema.parse(req.body);
+      
+      // Generate document using AI
+      const result = await generateDocument(validatedData);
+      
+      // Save to storage
+      const savedDoc = await storage.createDocument({
+        type: validatedData.type,
+        title: result.title,
+        content: result.content,
+        formData: validatedData.formData,
+        status: "completed",
+        userId: 1 // Default user for demo
+      });
+
+      res.json({ 
+        documentId: savedDoc.id.toString(),
+        title: savedDoc.title,
+        message: "Document generated successfully" 
+      });
+    } catch (error) {
+      console.error("Error generating document:", error);
+      res.status(500).json({ 
+        message: error instanceof Error ? error.message : "Failed to generate document" 
+      });
+    }
+  });
+
+  // Document download endpoint
+  app.get("/api/documents/:id/download", async (req, res) => {
+    try {
+      const documentId = parseInt(req.params.id);
+      const document = await storage.getDocument(documentId);
+      
+      if (!document) {
+        return res.status(404).json({ message: "Document not found" });
+      }
+
+      // Generate PDF from document content
+      const pdfBuffer = await storage.generatePDF(document);
+      
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename="${document.title}.pdf"`);
+      res.send(pdfBuffer);
+    } catch (error) {
+      console.error("Error downloading document:", error);
+      res.status(500).json({ message: "Failed to download document" });
+    }
+  });
+
+  const httpServer = createServer(app);
+  return httpServer;
+}
