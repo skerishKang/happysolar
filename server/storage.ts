@@ -1,7 +1,7 @@
 import { eq } from "drizzle-orm";
 import { db } from "./db";
 import { users, documents, company, type User, type Document, type Company, type InsertDocument } from "@shared/schema";
-import PptxGenJS from "pptxgenjs";
+import PptxGenJS = require("pptxgenjs");
 
 // Simple PDF generation using HTML to PDF approach
 function generatePDFContent(document: Document): Buffer {
