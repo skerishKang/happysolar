@@ -335,7 +335,7 @@ export default function DocumentGenerator({ featureId, companyInfo, onClose }: D
                   className="bg-orange-600 hover:bg-orange-700 text-white font-medium py-2.5 px-6"
                 >
                   <FileText className="w-4 h-4 mr-2" />
-                  PPT 다운로드
+                  프레젠테이션 다운로드
                 </Button>
                 <Button 
                   variant="outline" 

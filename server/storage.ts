@@ -57,7 +57,99 @@ function generatePPTXContent(document: Document): Buffer {
     }
   }
   
-  // Create a simple HTML-based presentation that can be saved as .pptx
+  // Create PowerPoint XML structure
+  const pptxXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<p:presentation xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main">
+  <p:sldMasterIdLst>
+    <p:sldMasterId id="2147483648" r:id="rId1"/>
+  </p:sldMasterIdLst>
+  <p:sldIdLst>
+    ${slides.map((slide, index) => `
+    <p:sldId id="${2147483649 + index}" r:id="rId${index + 2}"/>
+    `).join('')}
+  </p:sldIdLst>
+  <p:sldSz cx="9144000" cy="6858000"/>
+  <p:notesSz cx="6858000" cy="9144000"/>
+</p:presentation>`;
+
+  // Create slide XML for each slide
+  const slideXmls = slides.map((slide, index) => `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<p:sld xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main">
+  <p:cSld>
+    <p:spTree>
+      <p:nvGrpSpPr>
+        <p:cNvPr id="1" name=""/>
+        <p:cNvGrpSpPr/>
+        <p:nvPr/>
+      </p:nvGrpSpPr>
+      <p:grpSpPr>
+        <a:xfrm>
+          <a:off x="0" y="0"/>
+          <a:ext cx="0" cy="0"/>
+          <a:chOff x="0" y="0"/>
+          <a:chExt cx="0" cy="0"/>
+        </a:xfrm>
+      </p:grpSpPr>
+      <p:sp>
+        <p:nvSpPr>
+          <p:cNvPr id="2" name="Title 1"/>
+          <p:cNvSpPr>
+            <a:spLocks noGrp="1"/>
+          </p:cNvSpPr>
+          <p:nvPr>
+            <p:ph type="ctrTitle"/>
+          </p:nvPr>
+        </p:nvSpPr>
+        <p:spPr/>
+        <p:txBody>
+          <a:bodyPr/>
+          <a:lstStyle/>
+          <a:p>
+            <a:r>
+              <a:rPr lang="ko-KR" sz="4400" b="1">
+                <a:solidFill>
+                  <a:schemeClr val="tx1"/>
+                </a:solidFill>
+              </a:rPr>
+              <a:t>${slide.title || `슬라이드 ${index + 1}`}</a:t>
+            </a:r>
+          </a:p>
+        </p:txBody>
+      </p:sp>
+      <p:sp>
+        <p:nvSpPr>
+          <p:cNvPr id="3" name="Content Placeholder 2"/>
+          <p:cNvSpPr>
+            <a:spLocks noGrp="1"/>
+          </p:cNvSpPr>
+          <p:nvPr>
+            <p:ph idx="1"/>
+          </p:nvPr>
+        </p:nvSpPr>
+        <p:spPr/>
+        <p:txBody>
+          <a:bodyPr/>
+          <a:lstStyle/>
+          <a:p>
+            <a:r>
+              <a:rPr lang="ko-KR" sz="2800">
+                <a:solidFill>
+                  <a:schemeClr val="tx1"/>
+                </a:solidFill>
+              </a:rPr>
+              <a:t>${(slide.content || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</a:t>
+            </a:r>
+          </a:p>
+        </p:txBody>
+      </p:sp>
+    </p:spTree>
+  </p:cSld>
+  <p:clrMapOvr>
+    <a:masterClrMapping/>
+  </p:clrMapOvr>
+</p:sld>`);
+
+  // Create a simple HTML-based presentation that can be viewed as PowerPoint
   let htmlContent = `
 <!DOCTYPE html>
 <html>
@@ -68,14 +160,81 @@ function generatePPTXContent(document: Document): Buffer {
         body { 
             font-family: 'Malgun Gothic', Arial, sans-serif; 
             margin: 0; 
-            padding: 40px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
+            padding: 20px;
+            background: #f5f5f5;
+            color: #333;
         }
         .slide {
             page-break-after: always;
             min-height: 600px;
             padding: 40px;
+            margin-bottom: 20px;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .slide h1 {
+            font-size: 32px;
+            color: #2c5aa0;
+            border-bottom: 3px solid #2c5aa0;
+            padding-bottom: 10px;
+            margin-bottom: 30px;
+        }
+        .slide h2 {
+            font-size: 24px;
+            color: #2c5aa0;
+            margin-top: 25px;
+            margin-bottom: 15px;
+        }
+        .slide p {
+            font-size: 18px;
+            line-height: 1.6;
+            margin-bottom: 15px;
+        }
+        .slide-number {
+            position: absolute;
+            top: 10px;
+            right: 20px;
+            font-size: 14px;
+            color: #666;
+        }
+        .title-slide {
+            text-align: center;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .title-slide h1 {
+            color: white;
+            border-bottom: 3px solid white;
+            font-size: 48px;
+        }
+        @media print {
+            .slide {
+                page-break-after: always;
+                margin: 0;
+                box-shadow: none;
+                border: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="slide title-slide">
+        <div class="slide-number">1 / ${slides.length}</div>
+        <h1>${document.title}</h1>
+        <p style="font-size: 24px; margin-top: 40px;">HappySolar AI 자동화 시스템</p>
+        <p style="font-size: 18px;">생성일: ${new Date(document.createdAt).toLocaleDateString('ko-KR')}</p>
+    </div>
+    ${slides.map((slide, index) => `
+    <div class="slide">
+        <div class="slide-number">${index + 2} / ${slides.length + 1}</div>
+        <h1>${slide.title || `슬라이드 ${index + 1}`}</h1>
+        <div style="white-space: pre-wrap;">${(slide.content || '').replace(/\n/g, '<br>')}</div>
+    </div>
+    `).join('')}
+</body>
+</html>`;px;
             margin-bottom: 40px;
             background: white;
             color: #333;

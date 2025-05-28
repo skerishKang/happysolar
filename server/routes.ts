@@ -109,17 +109,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Create safe filename using only English characters and numbers
       const safeTitle = document.title
-        .replace(/[^a-zA-Z0-9]/g, '_')  // Replace all non-alphanumeric with underscore
-        .substring(0, 20);  // Limit length
+        .replace(/[^a-zA-Z0-9ㄱ-ㅎ가-힣]/g, '_')  // Keep Korean characters too
+        .substring(0, 30);  // Increase length limit
       
       const timestamp = new Date().toISOString().slice(0, 10).replace(/-/g, '');
-      const filename = `PPT_${safeTitle || 'document'}_${timestamp}.html`;
+      const filename = `${safeTitle || 'document'}_${timestamp}.html`;
       
       // Generate PowerPoint-style HTML file
       const pptxBuffer = await storage.generatePPTX(document);
       
       res.setHeader('Content-Type', 'text/html; charset=utf-8');
-      res.setHeader('Content-Disposition', `attachment; filename*=UTF-8''${encodeURIComponent(filename)}`);
+      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
       res.send(pptxBuffer);
     } catch (error) {
       console.error("Error downloading document:", error);
