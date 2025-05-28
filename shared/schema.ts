@@ -16,7 +16,7 @@ export const documents = pgTable("documents", {
   formData: jsonb("form_data").notNull(), // Original form input data
   status: text("status").notNull().default("completed"), // 'generating', 'completed', 'error'
   createdAt: timestamp("created_at").notNull().defaultNow(),
-  userId: integer("user_id").references(() => users.id),
+  userId: integer("user_id").references(() => users.id).default(null),
 });
 
 export const company = pgTable("company", {

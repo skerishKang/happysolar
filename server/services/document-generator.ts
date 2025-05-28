@@ -21,7 +21,7 @@ export async function generateDocument(type: string, formData: Record<string, an
       content: result.content,
       formData,
       status: "completed",
-      userId: 1 // Default user for now
+      userId: null // No user association for now
     });
 
     return document.id.toString();
