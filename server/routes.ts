@@ -43,22 +43,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const validatedData = documentGenerationSchema.parse(req.body);
       
-      // Generate document using AI
-      const result = await generateDocument(validatedData);
+      // Generate document using AI - returns document ID
+      const documentId = await generateDocument(validatedData.type, validatedData.formData);
       
-      // Save to storage
-      const savedDoc = await storage.createDocument({
-        type: validatedData.type,
-        title: result.title,
-        content: result.content,
-        formData: validatedData.formData,
-        status: "completed",
-        userId: 1 // Default user for demo
-      });
+      // Get the saved document
+      const savedDoc = await storage.getDocument(documentId);
 
       res.json({ 
-        documentId: savedDoc.id.toString(),
-        title: savedDoc.title,
+        documentId: documentId,
+        title: savedDoc?.title || "Generated Document",
         message: "Document generated successfully" 
       });
     } catch (error) {

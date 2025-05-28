@@ -5,14 +5,7 @@ import { generateDocumentContent } from "./openai";
 export async function generateDocument(type: string, formData: Record<string, any>): Promise<string> {
   try {
     // Get company info from storage
-    const companies = await storage.getCompanies();
-    const companyInfo = companies[0] || {
-      name: "주식회사 해피솔라",
-      businessNumber: "578-87-02666",
-      address: "전라남도 장흥군 장흥읍 장흥로 30, 2층",
-      businessType: "건설업, 전기공사업, 태양광발전소 부대장비",
-      representative: "김미희"
-    };
+    const companyInfo = await storage.getCompanyInfo();
 
     // Generate document content using OpenAI
     const result = await generateDocumentContent({
