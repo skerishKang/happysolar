@@ -317,6 +317,25 @@ export default function DocumentGenerator({ featureId, companyInfo, onClose }: D
     }
   };
 
+  const handlePDFDownload = async () => {
+    if (generatedDocId) {
+      try {
+        await downloadDocument(generatedDocId, 'pdf');
+        toast({
+          title: "PDF 다운로드 완료!",
+          description: "PDF 문서가 성공적으로 다운로드되었습니다.",
+        });
+      } catch (error) {
+        console.error('PDF Download failed:', error);
+        toast({
+          title: "PDF 다운로드 실패",
+          description: "PDF 다운로드 중 오류가 발생했습니다.",
+          variant: "destructive",
+        });
+      }
+    }
+  };
+
   if (generatedDocId) {
     return (
       <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
@@ -328,23 +347,32 @@ export default function DocumentGenerator({ featureId, companyInfo, onClose }: D
             <CardTitle className="text-2xl font-bold text-gray-900">문서 생성 완료!</CardTitle>
             <p className="text-gray-600">{template.title}이(가) 성공적으로 생성되었습니다.</p>
           </CardHeader>
-          <CardContent className="flex items-center justify-center space-x-4">
-            <div className="flex space-x-3">
-                <Button 
-                  onClick={handlePPTDownload}
-                  className="bg-orange-600 hover:bg-orange-700 text-white font-medium py-2.5 px-6"
-                >
-                  <FileText className="w-4 h-4 mr-2" />
-                  프레젠테이션 다운로드
-                </Button>
-                <Button 
-                  variant="outline" 
-                  onClick={onClose}
-                  className="p-2"
-                >
-                  <X className="w-4 h-4" />
-                </Button>
-              </div>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-2 gap-3">
+              <Button 
+                onClick={handlePPTDownload}
+                className="bg-orange-500 hover:bg-orange-600 text-white font-medium py-3"
+                disabled={downloadMutation.isPending}
+              >
+                {downloadMutation.isPending ? "다운로드 중..." : "📊 PPT 다운로드"}
+              </Button>
+
+              <Button 
+                onClick={handlePDFDownload}
+                className="bg-red-500 hover:bg-red-600 text-white font-medium py-3"
+                disabled={downloadMutation.isPending}
+              >
+                {downloadMutation.isPending ? "다운로드 중..." : "📄 PDF 다운로드"}
+              </Button>
+            </div>
+
+            <Button 
+              variant="outline" 
+              onClick={() => setGeneratedDocId(null)}
+              className="w-full"
+            >
+              새 문서 생성
+            </Button>
           </CardContent>
         </Card>
       </div>

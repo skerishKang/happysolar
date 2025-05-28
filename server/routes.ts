@@ -21,7 +21,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const files = req.files as Express.Multer.File[];
       const fileInfos = [];
-      
+
       for (const file of files) {
         const fileInfo = {
           originalName: file.originalname,
@@ -32,7 +32,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         };
         fileInfos.push(fileInfo);
       }
-      
+
       res.json({ files: fileInfos });
     } catch (error) {
       console.error("Error uploading files:", error);
@@ -76,10 +76,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/documents/generate", async (req, res) => {
     try {
       const validatedData = documentGenerationSchema.parse(req.body);
-      
+
       // Generate document using AI - returns document ID
       const documentId = await generateDocument(validatedData.type, validatedData.formData, validatedData.uploadedFiles || []);
-      
+
       // Get the saved document
       const savedDoc = await storage.getDocument(documentId);
 
@@ -96,46 +96,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Document download endpoint
-  app.get("/api/documents/:id/download", async (req, res) => {
+  // Download document as PPTX or PDF
+  app.get('/api/documents/:id/download', async (req, res) => {
     try {
-      const documentId = parseInt(req.params.id);
+      const documentId = req.params.id;
       const format = req.query.format as string || 'pptx';
       const document = await storage.getDocument(documentId);
-      
+
       if (!document) {
-        return res.status(404).json({ message: "Document not found" });
+        return res.status(404).json({ error: 'Document not found' });
       }
 
-      // Create safe filename using only English characters and numbers
-      const safeTitle = document.title
-        .replace(/[^a-zA-Z0-9]/g, '_')  // ASCII only for safety
-        .substring(0, 20);
-      
-      const timestamp = new Date().toISOString().slice(0, 10).replace(/-/g, '');
-      
-      if (format === 'pptx') {
-        const filename = `presentation_${safeTitle || 'document'}_${timestamp}.pptx`;
-        
-        // Generate real PowerPoint file
+      if (format === 'pdf') {
+        const pdfBuffer = await storage.generatePDF(document);
+        const filename = `${document.title || 'document'}_${new Date().toISOString().split('T')[0]}.pdf`;
+
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(filename)}"`);
+        res.send(pdfBuffer);
+      } else if (format === 'pptx') {
         const pptxBuffer = await storage.generatePPTX(document);
-        
+        const filename = `${document.title || 'document'}_${new Date().toISOString().split('T')[0]}.pptx`;
+
         res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.presentationml.presentation');
-        res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+        res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(filename)}"`);
         res.send(pptxBuffer);
       } else {
-        const filename = `document_${safeTitle || 'document'}_${timestamp}.pdf`;
-        
-        // Generate PDF file
-        const pdfBuffer = await storage.generatePDF(document);
-        
-        res.setHeader('Content-Type', 'application/pdf');
-        res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
-        res.send(pdfBuffer);
+        return res.status(400).json({ error: 'Invalid format. Use pdf or pptx' });
       }
     } catch (error) {
-      console.error("Error downloading document:", error);
-      res.status(500).json({ message: "Failed to download document" });
+      console.error('Download error:', error);
+      res.status(500).json({ error: 'Failed to generate document' });
     }
   });
 

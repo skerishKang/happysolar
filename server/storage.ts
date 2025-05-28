@@ -1,11 +1,31 @@
 import { eq } from "drizzle-orm";
 import { db } from "./db";
 import { users, documents, company, type User, type Document, type Company, type InsertDocument } from "@shared/schema";
-import PptxGenJS = require("pptxgenjs");
+import PptxGenJS from "pptxgenjs";
 
-// Simple PDF generation using HTML to PDF approach
+// Enhanced PDF generation with proper formatting
 function generatePDFContent(document: Document): Buffer {
-  // Create HTML content that can be converted to PDF
+  // Parse content whether it's string or object
+  let contentText = '';
+  
+  if (typeof document.content === 'string') {
+    contentText = document.content;
+  } else if (document.content && typeof document.content === 'object') {
+    if (Array.isArray(document.content)) {
+      contentText = document.content.map((item: any) => {
+        if (typeof item === 'string') return item;
+        if (item.content) return item.content;
+        return JSON.stringify(item, null, 2);
+      }).join('\n\n');
+    } else if (document.content.content && Array.isArray(document.content.content)) {
+      contentText = document.content.content.map((slide: any) => {
+        return `${slide.title || ''}\n${slide.content || ''}`;
+      }).join('\n\n');
+    } else {
+      contentText = JSON.stringify(document.content, null, 2);
+    }
+  }
+
   const htmlContent = `
 <!DOCTYPE html>
 <html>
@@ -13,22 +33,94 @@ function generatePDFContent(document: Document): Buffer {
     <meta charset="UTF-8">
     <title>${document.title}</title>
     <style>
-        body { font-family: Arial, sans-serif; margin: 40px; line-height: 1.6; }
-        h1 { color: #333; border-bottom: 2px solid #4A90E2; padding-bottom: 10px; }
-        h2 { color: #555; margin-top: 30px; }
-        .content { white-space: pre-wrap; }
-        .header { text-align: center; margin-bottom: 30px; }
-        .footer { margin-top: 30px; text-align: center; font-size: 12px; color: #666; }
+        @page { size: A4; margin: 2cm; }
+        body { 
+            font-family: 'Malgun Gothic', Arial, sans-serif; 
+            margin: 0; 
+            padding: 20px;
+            line-height: 1.8; 
+            color: #333;
+            font-size: 14px;
+        }
+        .header { 
+            text-align: center; 
+            margin-bottom: 40px; 
+            border-bottom: 3px solid #4A90E2;
+            padding-bottom: 20px;
+        }
+        .header h1 { 
+            color: #2c3e50; 
+            font-size: 24px;
+            margin: 0 0 10px 0;
+            font-weight: bold;
+        }
+        .header .date {
+            color: #7f8c8d;
+            font-size: 12px;
+        }
+        .content { 
+            white-space: pre-wrap; 
+            margin: 20px 0;
+            text-align: justify;
+        }
+        .section {
+            margin-bottom: 30px;
+            page-break-inside: avoid;
+        }
+        .section-title {
+            color: #2980b9;
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            border-left: 4px solid #4A90E2;
+            padding-left: 15px;
+        }
+        .footer { 
+            margin-top: 50px; 
+            text-align: center; 
+            font-size: 11px; 
+            color: #95a5a6;
+            border-top: 1px solid #ecf0f1;
+            padding-top: 20px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+        th {
+            background-color: #f8f9fa;
+            font-weight: bold;
+        }
     </style>
 </head>
 <body>
     <div class="header">
         <h1>${document.title}</h1>
-        <p>생성일: ${new Date(document.createdAt).toLocaleDateString('ko-KR')}</p>
+        <div class="date">생성일: ${new Date(document.createdAt).toLocaleDateString('ko-KR', {
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric'
+        })}</div>
     </div>
-    <div class="content">${document.content}</div>
+    
+    <div class="content">
+        ${contentText.split('\n\n').map(section => `
+            <div class="section">
+                ${section}
+            </div>
+        `).join('')}
+    </div>
+    
     <div class="footer">
-        <p>HappySolar AI 자동화 시스템으로 생성됨</p>
+        <p><strong>주식회사 해피솔라</strong></p>
+        <p>AI 자동화 문서 생성 시스템</p>
+        <p>본 문서는 AI를 활용하여 자동 생성되었습니다.</p>
     </div>
 </body>
 </html>`;
