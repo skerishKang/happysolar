@@ -423,16 +423,41 @@ export default function DocumentGenerator({ featureId, companyInfo, onClose }: D
                             </p>
                             <p className="text-xs text-gray-500">{field.placeholder}</p>
                             {formData[fieldKey] && (
-                              <p className="text-xs text-green-600 mt-2 font-medium">
-                                ✓ {formData[fieldKey].name || '파일이 선택되었습니다'}
-                              </p>
+                              <div className="mt-3 p-2 bg-green-50 rounded-lg border border-green-200">
+                                <p className="text-xs text-green-600 font-medium flex items-center">
+                                  <Check className="w-3 h-3 mr-1" />
+                                  {formData[fieldKey].name}
+                                </p>
+                                <div className="flex items-center space-x-2 mt-2">
+                                  <Button
+                                    type="button"
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => handleInputChange(index, null)}
+                                    className="text-xs h-6 px-2"
+                                  >
+                                    <X className="w-3 h-3 mr-1" />
+                                    제거
+                                  </Button>
+                                </div>
+                              </div>
                             )}
                             <Input
+                              id={`file-input-${index}`}
                               type="file"
                               accept={isAudioFile ? "audio/*" : "*"}
                               onChange={(e) => handleInputChange(index, e.target.files?.[0])}
-                              className="mt-3 cursor-pointer opacity-0 absolute inset-0"
+                              className="hidden"
                             />
+                            <Button
+                              type="button"
+                              variant="outline"
+                              className="mt-3 w-full bg-white/80 hover:bg-white border-indigo-200 hover:border-indigo-300"
+                              onClick={() => document.getElementById(`file-input-${index}`)?.click()}
+                            >
+                              <Upload className="w-4 h-4 mr-2" />
+                              파일 선택
+                            </Button>
                           </div>
                         </div>
                       </div>
