@@ -2,18 +2,62 @@ import { eq } from "drizzle-orm";
 import { db } from "./db";
 import { users, documents, company, type User, type Document, type Company, type InsertDocument } from "@shared/schema";
 
-// Simple PDF generation placeholder
+// Simple PDF generation using HTML to PDF approach
 function generatePDFContent(document: Document): Buffer {
-  // In production, use proper PDF generation library like puppeteer or pdfkit
-  const content = JSON.stringify(document.content, null, 2);
-  return Buffer.from(`PDF Content for: ${document.title}\n\n${content}`);
+  // Create HTML content that can be converted to PDF
+  const htmlContent = `
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>${document.title}</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; line-height: 1.6; }
+        h1 { color: #333; border-bottom: 2px solid #4A90E2; padding-bottom: 10px; }
+        h2 { color: #555; margin-top: 30px; }
+        .content { white-space: pre-wrap; }
+        .header { text-align: center; margin-bottom: 30px; }
+        .footer { margin-top: 30px; text-align: center; font-size: 12px; color: #666; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>${document.title}</h1>
+        <p>생성일: ${new Date(document.createdAt).toLocaleDateString('ko-KR')}</p>
+    </div>
+    <div class="content">${document.content}</div>
+    <div class="footer">
+        <p>HappySolar AI 자동화 시스템으로 생성됨</p>
+    </div>
+</body>
+</html>`;
+  return Buffer.from(htmlContent, 'utf8');
 }
 
-// Simple PPTX generation placeholder
+// Simple PPTX generation using XML structure
 function generatePPTXContent(document: Document): Buffer {
-  // In production, use proper PPTX generation library like pptxgenjs
-  const content = JSON.stringify(document.content, null, 2);
-  return Buffer.from(`PPTX Content for: ${document.title}\n\n${content}`);
+  // Create basic PowerPoint XML structure
+  const slides = document.content.split('\n\n').filter(slide => slide.trim());
+  
+  let pptxContent = `<?xml version="1.0" encoding="UTF-8"?>
+<presentation xmlns="http://schemas.openxmlformats.org/presentationml/2006/main">
+  <title>${document.title}</title>
+  <slides>`;
+
+  slides.forEach((slide, index) => {
+    pptxContent += `
+    <slide id="${index + 1}">
+      <title>슬라이드 ${index + 1}</title>
+      <content>${slide}</content>
+    </slide>`;
+  });
+
+  pptxContent += `
+  </slides>
+  <footer>HappySolar AI로 생성됨 - ${new Date().toLocaleDateString('ko-KR')}</footer>
+</presentation>`;
+
+  return Buffer.from(pptxContent, 'utf8');
 }
 
 interface IStorage {

@@ -65,6 +65,14 @@ export default function Dashboard() {
     queryKey: ['/api/documents/recent'],
   });
 
+  const handleDownload = async (docId: string, format: 'pdf' | 'pptx') => {
+    try {
+      await downloadDocument(docId, format);
+    } catch (error) {
+      console.error('Download failed:', error);
+    }
+  };
+
   const features = [
     {
       id: 'quotation',
@@ -392,9 +400,9 @@ export default function Dashboard() {
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => downloadDocument(doc.id, 'pdf')}
+                      onClick={() => handleDownload(doc.id, 'pdf')}
                       className="text-gray-500 hover:text-blue-600"
-                      title="PDF로 다운로드"
+                      title="HTML 파일로 다운로드"
                     >
                       <Download className="w-4 h-4" />
                     </Button>
@@ -402,9 +410,9 @@ export default function Dashboard() {
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => downloadDocument(doc.id, 'pptx')}
+                        onClick={() => handleDownload(doc.id, 'pptx')}
                         className="text-gray-500 hover:text-orange-600"
-                        title="PowerPoint로 다운로드"
+                        title="PowerPoint 형식으로 다운로드"
                       >
                         <Presentation className="w-4 h-4" />
                       </Button>

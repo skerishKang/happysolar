@@ -79,15 +79,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (format === 'pptx' && document.type === 'presentation') {
         // Generate PowerPoint file
         const pptxBuffer = await storage.generatePPTX(document);
-        res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.presentationml.presentation');
-        res.setHeader('Content-Disposition', `attachment; filename*=UTF-8''${safeFilename}.pptx`);
+        res.setHeader('Content-Type', 'application/octet-stream');
+        res.setHeader('Content-Disposition', `attachment; filename="${document.title.replace(/[^a-zA-Z0-9가-힣]/g, '_')}.pptx"`);
         res.send(pptxBuffer);
       } else {
-        // Generate PDF from document content
-        const pdfBuffer = await storage.generatePDF(document);
-        res.setHeader('Content-Type', 'application/pdf');
-        res.setHeader('Content-Disposition', `attachment; filename*=UTF-8''${safeFilename}.pdf`);
-        res.send(pdfBuffer);
+        // Generate HTML file that can be viewed as PDF
+        const htmlBuffer = await storage.generatePDF(document);
+        res.setHeader('Content-Type', 'text/html; charset=utf-8');
+        res.setHeader('Content-Disposition', `attachment; filename="${document.title.replace(/[^a-zA-Z0-9가-힣]/g, '_')}.html"`);
+        res.send(htmlBuffer);
       }
     } catch (error) {
       console.error("Error downloading document:", error);
