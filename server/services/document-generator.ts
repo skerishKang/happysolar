@@ -40,7 +40,7 @@ export async function generateDocument(type: string, formData: Record<string, an
 
 function getDocumentTypeKorean(type: string): string {
   const typeMap: Record<string, string> = {
-    'tax-invoice': '세금계산서',
+    'quotation': '견적서',
     'transaction-statement': '거래명세서',
     'contract': '계약서',
     'presentation': '프레젠테이션',

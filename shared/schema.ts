@@ -43,7 +43,7 @@ export const insertDocumentSchema = createInsertSchema(documents).pick({
 });
 
 export const documentGenerationSchema = z.object({
-  type: z.enum(['tax-invoice', 'transaction-statement', 'contract', 'presentation', 'proposal', 'minutes', 'email']),
+  type: z.enum(['quotation', 'transaction-statement', 'contract', 'presentation', 'proposal', 'minutes', 'email']),
   formData: z.record(z.any()),
 });
 

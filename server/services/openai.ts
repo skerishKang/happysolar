@@ -90,49 +90,78 @@ function createPromptForDocumentType(type: string, formData: Record<string, any>
 `;
 
   switch (type) {
-    case 'tax-invoice':
+    case 'quotation':
       return `${baseCompanyInfo}
 
-🔥 국세청 실시간 연동 세금계산서 자동 생성 🔥
+💰 전문 견적서 자동 생성 (태양광 전문) 💰
 
-매입처 정보:
-- 거래처명: ${formData.field_0 || ''}
-- 사업자등록번호: ${formData.field_1 || ''}
-- 대표자명: ${formData.field_2 || ''}
-- 주소: ${formData.field_3 || ''}
+고객 정보:
+- 고객 회사명: ${formData.field_0 || ''}
+- 담당자명: ${formData.field_1 || ''}
+- 연락처: ${formData.field_2 || ''}
+- 이메일: ${formData.field_3 || ''}
 
-거래 내용:
-- 품목명: ${formData.field_4 || '태양광 발전시설 시공'}
-- 규격: ${formData.field_5 || ''}
-- 수량: ${formData.field_6 || '1식'}
-- 단가: ${formData.field_7 || ''}
-- 공급가액: ${formData.field_8 || ''}
+견적 내용:
+- 견적 요청 내용: ${formData.field_4 || '태양광 발전시설 설치'}
+- 설치 장소: ${formData.field_5 || ''}
+- 예상 용량: ${formData.field_6 || ''}kW
+- 견적 유효기간: ${formData.field_7 || '30일'}
+- 공사 예정일: ${formData.field_8 || ''}
+- 특별 요구사항: ${formData.field_9 || ''}
 
-💎 특별 AI 기능:
-1. 국세청 전자세금계산서 완벽 준수 (홈택스 연동 가능)
-2. 부가세 10% 자동 계산 및 검증
-3. 태양광 산업 표준 품목 분류 자동 적용
-4. 세무서 검사 통과 보장 수준
-5. 오류 사전 검증 및 수정 제안
-6. 실제 발행 즉시 가능한 완성도
+💡 AI 견적서 핵심 기능:
+1. 태양광 발전소 전문 견적 시스템
+2. 실시간 시장가 반영 및 자동 계산
+3. 설치 조건별 맞춤 견적 산출
+4. 정부 보조금 및 인센티브 자동 적용
+5. 투자 회수 기간 및 수익성 분석
+6. 20년 운영비용 포함 통합 견적
 
-JSON 형식으로 전문적인 세금계산서를 생성해주세요:
+JSON 형식으로 전문적인 견적서를 생성해주세요:
 {
-  "title": "세금계산서_[거래처명]_[날짜]",
+  "title": "견적서_[고객회사명]_[날짜]",
   "content": {
-    "documentType": "전자세금계산서",
-    "taxInvoiceNumber": "자동생성 계산서 번호",
-    "issueDate": "작성일자",
-    "supplier": {
-      "companyName": "공급자 회사명",
-      "businessNumber": "사업자등록번호",
-      "representative": "대표자명",
-      "address": "사업장 주소",
-      "businessType": "업종",
-      "phone": "전화번호"
+    "documentType": "태양광 발전소 설치 견적서",
+    "quotationNumber": "자동생성 견적서 번호",
+    "issueDate": "견적서 작성일",
+    "validUntil": "견적 유효기간",
+    "customer": {
+      "companyName": "고객 회사명",
+      "contactPerson": "담당자명",
+      "phone": "연락처",
+      "email": "이메일",
+      "address": "설치 장소"
     },
-    "buyer": {
-      "companyName": "매입처 회사명",
+    "projectDetails": {
+      "capacity": "설치 용량",
+      "panelType": "태양광 모듈 종류",
+      "inverterType": "인버터 종류",
+      "structure": "구조물 타입",
+      "installationType": "설치 형태"
+    },
+    "costBreakdown": {
+      "equipment": "장비비 상세",
+      "installation": "시공비 상세",
+      "permit": "인허가비",
+      "maintenance": "유지보수비",
+      "subtotal": "소계",
+      "vat": "부가세",
+      "totalAmount": "총 견적금액"
+    },
+    "financialAnalysis": {
+      "paybackPeriod": "투자 회수 기간",
+      "annualProduction": "연간 발전량",
+      "annualRevenue": "연간 수익",
+      "totalROI": "20년 총 수익"
+    },
+    "terms": {
+      "paymentTerms": "결제 조건",
+      "warrantyPeriod": "보증 기간",
+      "deliverySchedule": "공사 일정"
+    },
+    "fullText": "고객 제출용 완성된 견적서 전체 내용"
+  }
+}처 회사명",
       "businessNumber": "매입처 사업자등록번호",
       "representative": "매입처 대표자",
       "address": "매입처 주소"

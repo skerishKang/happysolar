@@ -34,21 +34,22 @@ interface FormField {
 }
 
 const featureTemplates: Record<string, { title: string; icon: string; fields: FormField[]; aiDescription: string }> = {
-  'tax-invoice': {
-    title: '자동 세금계산서 작성',
-    icon: 'fas fa-receipt',
-    aiDescription: 'AI가 업로드한 템플릿을 참고하여 국세청 표준양식에 맞춰 자동 생성합니다.',
+  'quotation': {
+    title: '자동 견적서 작성',
+    icon: 'fas fa-file-invoice',
+    aiDescription: 'AI가 업로드한 템플릿을 참고하여 전문적인 견적서를 자동 생성합니다.',
     fields: [
-      { label: '참고 세금계산서 템플릿', type: 'file', placeholder: '기존 세금계산서 파일 업로드 (PDF, 이미지) - 양식을 참고하여 생성합니다', required: false },
-      { label: '거래처 상호명', type: 'text', placeholder: '(주)ABC건설', required: true },
-      { label: '거래처 사업자등록번호', type: 'text', placeholder: '123-45-67890', required: true },
-      { label: '거래처 주소', type: 'text', placeholder: '서울특별시 강남구 테헤란로 123', required: true },
-      { label: '거래처 대표자명', type: 'text', placeholder: '홍길동', required: true },
-      { label: '품목명/상품명', type: 'text', placeholder: '태양광 모듈 300W, 인버터 5kW', required: true },
-      { label: '공급수량', type: 'number', placeholder: '10', required: true },
-      { label: '공급단가 (원)', type: 'number', placeholder: '500000', required: true },
-      { label: '공급일자', type: 'date', placeholder: '', required: true },
-      { label: '특이사항', type: 'textarea', placeholder: 'A/S 보증기간 10년, 설치비 별도', required: false }
+      { label: '참고 견적서 템플릿', type: 'file', placeholder: '기존 견적서 파일 업로드 (PDF, Excel, 이미지) - 양식을 참고하여 생성합니다', required: false },
+      { label: '고객 회사명', type: 'text', placeholder: '(주)ABC건설', required: true },
+      { label: '고객 담당자명', type: 'text', placeholder: '홍길동 부장', required: true },
+      { label: '고객 연락처', type: 'text', placeholder: '02-1234-5678', required: true },
+      { label: '고객 이메일', type: 'text', placeholder: 'customer@abc.com', required: false },
+      { label: '견적 요청 내용', type: 'textarea', placeholder: '아파트 옥상 태양광 발전소 설치 (100kW급)', required: true },
+      { label: '설치 장소', type: 'text', placeholder: '서울시 강남구 테헤란로 123번지', required: true },
+      { label: '예상 용량 (kW)', type: 'number', placeholder: '100', required: true },
+      { label: '견적 유효기간', type: 'select', options: ['30일', '60일', '90일'], required: true },
+      { label: '공사 예정일', type: 'date', placeholder: '', required: false },
+      { label: '특별 요구사항', type: 'textarea', placeholder: '모니터링 시스템 포함, 20년 A/S 보증 등', required: false }
     ]
   },
   'transaction-statement': {
