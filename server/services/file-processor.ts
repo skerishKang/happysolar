@@ -13,8 +13,16 @@ export async function processUploadedFiles(files: any[]): Promise<ProcessedFile[
   
   for (const file of files) {
     try {
+      // 안전한 파일명 처리
+      const originalName = file.originalname || file.originalName || `file_${Date.now()}`;
       const filePath = file.path;
-      const ext = path.extname(file.originalname).toLowerCase();
+      
+      if (!filePath || !originalName) {
+        console.log('Invalid file data:', file);
+        continue;
+      }
+      
+      const ext = path.extname(originalName).toLowerCase();
       let content = '';
       let type: ProcessedFile['type'] = 'unknown';
       
@@ -27,26 +35,28 @@ export async function processUploadedFiles(files: any[]): Promise<ProcessedFile[
           content = pdfData.text;
         } catch (error) {
           console.error('PDF parsing error:', error);
-          content = `[PDF 파일 처리 오류: ${file.originalname}]`;
+          content = `[PDF 파일 처리 오류: ${originalName}]`;
         }
       } else if (ext === '.txt' || ext === '.md') {
         type = 'text';
         content = fs.readFileSync(filePath, 'utf8');
       } else if (['.jpg', '.jpeg', '.png', '.gif'].includes(ext)) {
         type = 'image';
-        content = `[이미지 파일: ${file.originalname}]`;
+        content = `[이미지 파일: ${originalName}]`;
       }
       
       processedFiles.push({
-        originalName: file.originalname,
+        originalName,
         content,
         type
       });
       
       // Clean up uploaded file
-      fs.unlinkSync(filePath);
+      if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
+      }
     } catch (error) {
-      console.error(`Error processing file ${file.originalname}:`, error);
+      console.error(`Error processing file ${file?.originalname || 'unknown'}:`, error);
     }
   }
   

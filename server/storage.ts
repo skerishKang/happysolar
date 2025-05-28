@@ -149,97 +149,149 @@ function generatePPTXContent(document: Document): Buffer {
   </p:clrMapOvr>
 </p:sld>`);
 
-  // Create a simple HTML-based presentation that can be viewed as PowerPoint
+  // Create a simple HTML-based presentation that works in browsers
   const htmlContent = `<!DOCTYPE html>
-<html>
+<html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>${document.title}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>${document.title || '프레젠테이션'}</title>
     <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         body { 
-            font-family: 'Malgun Gothic', Arial, sans-serif; 
-            margin: 0; 
-            padding: 20px;
-            background: #f5f5f5;
-            color: #333;
+            font-family: 'Malgun Gothic', '맑은 고딕', Arial, sans-serif; 
+            background: #1a1a1a;
+            color: #fff;
+            overflow: hidden;
+        }
+        .presentation {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
         }
         .slide {
-            page-break-after: always;
-            min-height: 600px;
-            padding: 40px;
-            margin-bottom: 40px;
-            background: white;
-            color: #333;
-            border-radius: 15px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-        }
-        .slide:last-child { page-break-after: avoid; }
-        h1 { 
-            color: #2c3e50; 
-            border-bottom: 3px solid #3498db; 
-            padding-bottom: 15px;
-            font-size: 32px;
-            margin-bottom: 30px;
-        }
-        h2 { 
-            color: #34495e; 
-            font-size: 24px;
-            margin-top: 30px;
-            margin-bottom: 20px;
-        }
-        .content { 
-            white-space: pre-wrap; 
-            line-height: 1.8;
-            font-size: 16px;
-        }
-        .title-slide {
-            text-align: center;
+            display: none;
+            width: 100%;
+            height: 100%;
+            padding: 60px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             display: flex;
             flex-direction: column;
             justify-content: center;
+            text-align: center;
+        }
+        .slide.active { display: flex; }
+        .slide h1 { 
+            font-size: 3rem;
+            margin-bottom: 2rem;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        .slide .content { 
+            font-size: 1.5rem;
+            line-height: 1.8;
+            max-width: 800px;
+            margin: 0 auto;
+            text-align: left;
+        }
+        .title-slide {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
         }
-        .title-slide h1 {
-            font-size: 48px;
+        .content-slide {
+            background: linear-gradient(135deg, #2193b0 0%, #6dd5ed 100%);
+        }
+        .navigation {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 20px;
+            z-index: 1000;
+        }
+        .nav-btn {
+            padding: 10px 20px;
+            background: rgba(255,255,255,0.2);
             border: none;
+            border-radius: 25px;
             color: white;
-            margin-bottom: 20px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.3s;
         }
-        .company-info {
-            font-size: 18px;
-            margin-top: 40px;
-            opacity: 0.9;
+        .nav-btn:hover {
+            background: rgba(255,255,255,0.3);
+            transform: scale(1.05);
+        }
+        .slide-counter {
+            position: fixed;
+            top: 30px;
+            right: 30px;
+            background: rgba(0,0,0,0.5);
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-size: 14px;
         }
         @media print {
-            .slide {
-                page-break-after: always;
-                margin: 0;
-                box-shadow: none;
-                border: none;
+            .slide { 
+                display: block !important; 
+                page-break-after: always; 
+                height: auto;
+                min-height: 100vh;
             }
+            .navigation, .slide-counter { display: none; }
         }
     </style>
 </head>
 <body>
-    <!-- Title Slide -->
-    <div class="slide title-slide">
-        <h1>${document.title}</h1>
-        <div class="company-info">
-            <p>주식회사 해피솔라</p>
-            <p>생성일: ${new Date().toLocaleDateString('ko-KR')}</p>
+    <div class="presentation">
+        <div class="slide-counter">
+            <span id="current">1</span> / <span id="total">${slides.length + 1}</span>
+        </div>
+        
+        <!-- Title Slide -->
+        <div class="slide title-slide active">
+            <h1>${document.title || '프레젠테이션'}</h1>
+            <div class="content">
+                <p style="font-size: 1.2rem; margin-top: 40px;">주식회사 해피솔라</p>
+                <p style="font-size: 1rem; margin-top: 20px;">${new Date().toLocaleDateString('ko-KR')}</p>
+            </div>
+        </div>
+        
+        ${slides.map((slide, index) => `
+        <div class="slide content-slide">
+            <h1>${slide.title || `슬라이드 ${index + 1}`}</h1>
+            <div class="content">${(slide.content || '').replace(/\n/g, '<br>')}</div>
+        </div>`).join('')}
+        
+        <div class="navigation">
+            <button class="nav-btn" onclick="prevSlide()">◀ 이전</button>
+            <button class="nav-btn" onclick="nextSlide()">다음 ▶</button>
         </div>
     </div>
     
-    <!-- Content Slides -->${slides.map((slide, index) => `
-    <div class="slide">
-        <h1>${slide.title || `슬라이드 ${index + 1}`}</h1>
-        <div class="content">${(slide.content || '').replace(/\n/g, '<br>')}</div>
-    </div>`).join('')}
-    
-    <div style="text-align: center; padding: 20px; font-size: 12px; color: #666;">
-        HappySolar AI로 생성됨
-    </div>
+    <script>
+        let currentSlide = 0;
+        const slides = document.querySelectorAll('.slide');
+        const totalSlides = slides.length;
+        
+        function showSlide(n) {
+            slides.forEach(slide => slide.classList.remove('active'));
+            currentSlide = (n + totalSlides) % totalSlides;
+            slides[currentSlide].classList.add('active');
+            document.getElementById('current').textContent = currentSlide + 1;
+            document.getElementById('total').textContent = totalSlides;
+        }
+        
+        function nextSlide() { showSlide(currentSlide + 1); }
+        function prevSlide() { showSlide(currentSlide - 1); }
+        
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'ArrowRight' || e.key === ' ') nextSlide();
+            if (e.key === 'ArrowLeft') prevSlide();
+        });
+        
+        showSlide(0);
+    </script>
 </body>
 </html>`;
 
