@@ -66,18 +66,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/documents/:id/download", async (req, res) => {
     try {
       const documentId = parseInt(req.params.id);
+      const format = req.query.format as string || 'pdf';
       const document = await storage.getDocument(documentId);
       
       if (!document) {
         return res.status(404).json({ message: "Document not found" });
       }
 
-      // Generate PDF from document content
-      const pdfBuffer = await storage.generatePDF(document);
+      // Encode filename for proper header handling
+      const safeFilename = encodeURIComponent(document.title).replace(/'/g, '%27');
       
-      res.setHeader('Content-Type', 'application/pdf');
-      res.setHeader('Content-Disposition', `attachment; filename="${document.title}.pdf"`);
-      res.send(pdfBuffer);
+      if (format === 'pptx' && document.type === 'presentation') {
+        // Generate PowerPoint file
+        const pptxBuffer = await storage.generatePPTX(document);
+        res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.presentationml.presentation');
+        res.setHeader('Content-Disposition', `attachment; filename*=UTF-8''${safeFilename}.pptx`);
+        res.send(pptxBuffer);
+      } else {
+        // Generate PDF from document content
+        const pdfBuffer = await storage.generatePDF(document);
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', `attachment; filename*=UTF-8''${safeFilename}.pdf`);
+        res.send(pdfBuffer);
+      }
     } catch (error) {
       console.error("Error downloading document:", error);
       res.status(500).json({ message: "Failed to download document" });

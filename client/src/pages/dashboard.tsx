@@ -95,7 +95,7 @@ export default function Dashboard() {
     {
       id: 'contract',
       title: '자동 계약서 작성',
-      description: '계약조건 입력 → 법무검토 AI → 리스크분석 → 표준계약서 생성. 태양광업계 특화 약관과 하자보증 조항 포함.',
+      description: '계약조건 입력 → 법무검토 AI AI → 리스크분석 → 표준계약서 생성. 태양광업계 특화 약관과 하자보증 조항 포함.',
       icon: Handshake,
       color: 'from-violet-500 via-purple-500 to-fuchsia-500',
       bgColor: 'bg-gradient-to-br from-violet-50 to-purple-50',
@@ -192,7 +192,7 @@ export default function Dashboard() {
                 <span className="text-xs ml-1">사업자등록번호: {companyInfo?.businessNumber || "578-87-02666"}</span>
               </div>
             </div>
-            
+
             {/* User Menu */}
             <div className="flex items-center space-x-4">
               <div className="hidden md:flex items-center space-x-3">
@@ -334,7 +334,7 @@ export default function Dashboard() {
                     <p className="text-gray-600 mb-6 leading-relaxed text-sm">
                       {feature.description}
                     </p>
-                    
+
                     {/* AI Features Pills */}
                     <div className="flex flex-wrap gap-2 mb-6">
                       {feature.aiFeatures?.map((aiFeature, index) => (
@@ -346,7 +346,7 @@ export default function Dashboard() {
                         </span>
                       ))}
                     </div>
-                    
+
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-2 text-sm text-gray-500">
                         <Clock className="w-4 h-4" />
@@ -374,7 +374,7 @@ export default function Dashboard() {
               <span>전체 보기</span>
             </Button>
           </div>
-          
+
           <div className="space-y-4">
             {recentDocs && recentDocs.length > 0 ? (
               recentDocs.map((doc) => (
@@ -388,10 +388,33 @@ export default function Dashboard() {
                       <p className="text-sm text-gray-600">{doc.createdAt} 생성 • PDF 형식</p>
                     </div>
                   </div>
-                  <div className="flex items-center space-x-3">
-                    <Badge className="bg-green-100 text-green-700">완료</Badge>
-                    <Button variant="ghost" size="sm" className="text-gray-400 hover:text-gray-600">
+                  <div className="flex space-x-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => downloadDocument(doc.id, 'pdf')}
+                      className="text-gray-500 hover:text-blue-600"
+                      title="PDF로 다운로드"
+                    >
                       <Download className="w-4 h-4" />
+                    </Button>
+                    {doc.type === 'presentation' && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => downloadDocument(doc.id, 'pptx')}
+                        className="text-gray-500 hover:text-orange-600"
+                        title="PowerPoint로 다운로드"
+                      >
+                        <Presentation className="w-4 h-4" />
+                      </Button>
+                    )}
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="text-gray-500 hover:text-blue-600"
+                    >
+                      <Share className="w-4 h-4" />
                     </Button>
                   </div>
                 </div>

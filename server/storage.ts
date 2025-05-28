@@ -9,6 +9,13 @@ function generatePDFContent(document: Document): Buffer {
   return Buffer.from(`PDF Content for: ${document.title}\n\n${content}`);
 }
 
+// Simple PPTX generation placeholder
+function generatePPTXContent(document: Document): Buffer {
+  // In production, use proper PPTX generation library like pptxgenjs
+  const content = JSON.stringify(document.content, null, 2);
+  return Buffer.from(`PPTX Content for: ${document.title}\n\n${content}`);
+}
+
 interface IStorage {
   getUser(id: number): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
@@ -25,6 +32,7 @@ interface IStorage {
   }>;
   getCompanyInfo(): Promise<Company>;
   generatePDF(document: Document): Promise<Buffer>;
+  generatePPTX(document: Document): Promise<Buffer>;
 }
 
 // Database Storage implementation
@@ -101,6 +109,10 @@ export class DatabaseStorage implements IStorage {
 
   async generatePDF(document: Document): Promise<Buffer> {
     return generatePDFContent(document);
+  }
+
+  async generatePPTX(document: Document): Promise<Buffer> {
+    return generatePPTXContent(document);
   }
 }
 

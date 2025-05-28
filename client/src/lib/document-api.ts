@@ -26,8 +26,8 @@ export async function generateDocument(request: DocumentGenerationRequest): Prom
   return response.json();
 }
 
-export async function downloadDocument(documentId: string): Promise<void> {
-  const response = await fetch(`${API_BASE}/documents/${documentId}/download`);
+export async function downloadDocument(documentId: string, format: 'pdf' | 'pptx' = 'pdf'): Promise<void> {
+  const response = await fetch(`${API_BASE}/documents/${documentId}/download?format=${format}`);
   
   if (!response.ok) {
     throw new Error('Failed to download document');
@@ -38,7 +38,8 @@ export async function downloadDocument(documentId: string): Promise<void> {
   const a = document.createElement('a');
   a.style.display = 'none';
   a.href = url;
-  a.download = `document_${documentId}.pdf`;
+  const extension = format === 'pptx' ? 'pptx' : 'pdf';
+  a.download = `document_${documentId}.${extension}`;
   document.body.appendChild(a);
   a.click();
   window.URL.revokeObjectURL(url);
