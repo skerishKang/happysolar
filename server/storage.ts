@@ -1,7 +1,6 @@
 import { eq } from "drizzle-orm";
 import { db } from "./db";
 import { users, documents, company, type User, type Document, type Company, type InsertDocument } from "@shared/schema";
-const PptxGenJS = require("pptxgenjs");
 import puppeteer from "puppeteer";
 
 // Real PDF generation using puppeteer
@@ -162,7 +161,10 @@ async function generatePDFContent(document: Document): Promise<Buffer> {
 }
 
 // Real PPTX generation using pptxgenjs library
-function generatePPTXContent(document: Document): Buffer {
+async function generatePPTXContent(document: Document): Promise<Buffer> {
+  // Dynamic import for CommonJS module
+  const PptxGenJS = (await import('pptxgenjs')).default;
+  
   // Create a new presentation
   const pptx = new PptxGenJS();
   
@@ -346,7 +348,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async generatePPTX(document: Document): Promise<Buffer> {
-    return generatePPTXContent(document);
+    return await generatePPTXContent(document);
   }
 }
 
