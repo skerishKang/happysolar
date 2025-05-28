@@ -621,7 +621,7 @@ JSON 형식으로 전문적인 이메일을 생성해주세요:
 
 function getDocumentTypeTitle(type: string): string {
   const titles: Record<string, string> = {
-    'tax-invoice': '세금계산서',
+    'quotation': '견적서',
     'transaction-statement': '거래명세서',
     'contract': '계약서',
     'presentation': '프레젠테이션',

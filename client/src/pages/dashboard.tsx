@@ -67,9 +67,9 @@ export default function Dashboard() {
 
   const features = [
     {
-      id: 'tax-invoice',
-      title: '자동 세금계산서 작성',
-      description: '거래정보 입력 → AI 자동분석 → 국세청 표준양식 생성 → 즉시 PDF 발급. 부가세 자동계산과 오류검증 포함.',
+      id: 'quotation',
+      title: '자동 견적서 작성',
+      description: '고객정보 입력 → AI 자동분석 → 전문 견적서 생성 → 즉시 PDF 발급. 태양광 전문 견적과 투자 회수 분석 포함.',
       icon: Receipt,
       color: 'from-indigo-500 via-purple-500 to-blue-500',
       bgColor: 'bg-gradient-to-br from-indigo-50 to-purple-50',
@@ -77,7 +77,7 @@ export default function Dashboard() {
       buttonColor: 'bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700',
       estimatedTime: '30초 자동생성',
       badge: 'AI 핵심',
-      aiFeatures: ['국세청 실시간 연동', '부가세 자동계산', '오류 사전검증']
+      aiFeatures: ['태양광 전문 견적', '투자회수 분석', '정부지원금 반영']
     },
     {
       id: 'transaction-statement',

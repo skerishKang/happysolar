@@ -10,7 +10,7 @@ export const users = pgTable("users", {
 
 export const documents = pgTable("documents", {
   id: serial("id").primaryKey(),
-  type: text("type").notNull(), // 'tax-invoice', 'transaction-statement', 'contract', 'presentation', 'proposal', 'minutes', 'email'
+  type: text("type").notNull(), // 'quotation', 'transaction-statement', 'contract', 'presentation', 'proposal', 'minutes', 'email'
   title: text("title").notNull(),
   content: jsonb("content").notNull(), // Generated document content
   formData: jsonb("form_data").notNull(), // Original form input data
