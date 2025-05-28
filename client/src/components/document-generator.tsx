@@ -358,6 +358,7 @@ export default function DocumentGenerator({ featureId, companyInfo, onClose }: D
                   const fieldKey = `field_${index}`;
                   
                   if (field.type === 'file') {
+                    const isAudioFile = featureId === 'minutes' && field.label.includes('음성');
                     return (
                       <div key={index} className="md:col-span-2">
                         <Label className="text-sm font-bold text-gray-700 mb-3 block flex items-center space-x-2">
@@ -366,12 +367,18 @@ export default function DocumentGenerator({ featureId, companyInfo, onClose }: D
                         </Label>
                         <div className="border-2 border-dashed border-indigo-200 rounded-2xl p-6 bg-gradient-to-r from-indigo-50 to-purple-50 hover:border-indigo-300 transition-colors">
                           <div className="text-center">
-                            <Mic className="w-12 h-12 text-indigo-400 mx-auto mb-3" />
-                            <p className="text-sm font-medium text-gray-700 mb-2">음성 파일을 드래그하거나 클릭해서 업로드</p>
+                            {isAudioFile ? (
+                              <Mic className="w-12 h-12 text-indigo-400 mx-auto mb-3" />
+                            ) : (
+                              <Upload className="w-12 h-12 text-indigo-400 mx-auto mb-3" />
+                            )}
+                            <p className="text-sm font-medium text-gray-700 mb-2">
+                              {isAudioFile ? '음성 파일을 드래그하거나 클릭해서 업로드' : '파일을 드래그하거나 클릭해서 업로드'}
+                            </p>
                             <p className="text-xs text-gray-500">{field.placeholder}</p>
                             <Input
                               type="file"
-                              accept="audio/*"
+                              accept={isAudioFile ? "audio/*" : "*"}
                               onChange={(e) => handleInputChange(index, e.target.files?.[0])}
                               className="mt-3 cursor-pointer"
                             />
