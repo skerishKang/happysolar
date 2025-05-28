@@ -1,24 +1,70 @@
-import { apiRequest } from "./queryClient";
-import type { DocumentGenerationRequest } from "@shared/schema";
 
-export async function generateDocument(data: DocumentGenerationRequest) {
-  const response = await apiRequest("POST", "/api/documents/generate", data);
-  return await response.json();
+const API_BASE = '/api';
+
+export interface DocumentGenerationRequest {
+  type: string;
+  formData: Record<string, any>;
 }
 
-export async function downloadDocument(documentId: string) {
-  const response = await apiRequest("GET", `/api/documents/${documentId}/download`);
+export interface DocumentGenerationResponse {
+  documentId: string;
+}
+
+export async function generateDocument(request: DocumentGenerationRequest): Promise<DocumentGenerationResponse> {
+  const response = await fetch(`${API_BASE}/documents/generate`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(request),
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to generate document');
+  }
+
+  return response.json();
+}
+
+export async function downloadDocument(documentId: string): Promise<void> {
+  const response = await fetch(`${API_BASE}/documents/${documentId}/download`);
   
-  // Create blob and download
+  if (!response.ok) {
+    throw new Error('Failed to download document');
+  }
+
   const blob = await response.blob();
   const url = window.URL.createObjectURL(blob);
   const a = document.createElement('a');
+  a.style.display = 'none';
   a.href = url;
-  a.download = `HappySolar_Document_${documentId}.pdf`;
+  a.download = `document_${documentId}.pdf`;
   document.body.appendChild(a);
   a.click();
-  document.body.removeChild(a);
   window.URL.revokeObjectURL(url);
-  
-  return { success: true };
+  document.body.removeChild(a);
+}
+
+export async function fetchRecentDocuments() {
+  const response = await fetch(`${API_BASE}/documents/recent`);
+  if (!response.ok) {
+    throw new Error('Failed to fetch recent documents');
+  }
+  return response.json();
+}
+
+export async function fetchDocumentStats() {
+  const response = await fetch(`${API_BASE}/documents/stats`);
+  if (!response.ok) {
+    throw new Error('Failed to fetch document stats');
+  }
+  return response.json();
+}
+
+export async function fetchCompanyInfo() {
+  const response = await fetch(`${API_BASE}/company`);
+  if (!response.ok) {
+    throw new Error('Failed to fetch company info');
+  }
+  return response.json();
 }
