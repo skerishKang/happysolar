@@ -165,6 +165,7 @@ const featureTemplates: Record<string, { title: string; icon: string; fields: Fo
 export default function DocumentGenerator({ featureId, companyInfo, onClose }: DocumentGeneratorProps) {
   const [formData, setFormData] = useState<Record<string, any>>({});
   const [generatedDocId, setGeneratedDocId] = useState<string | null>(null);
+  const [dragOver, setDragOver] = useState<number | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -213,6 +214,31 @@ export default function DocumentGenerator({ featureId, companyInfo, onClose }: D
       ...prev,
       [`field_${fieldIndex}`]: value
     }));
+  };
+
+  const handleDragOver = (e: React.DragEvent, fieldIndex: number) => {
+    e.preventDefault();
+    setDragOver(fieldIndex);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    setDragOver(null);
+  };
+
+  const handleDrop = (e: React.DragEvent, fieldIndex: number) => {
+    e.preventDefault();
+    setDragOver(null);
+    
+    const files = e.dataTransfer.files;
+    if (files && files.length > 0) {
+      const file = files[0];
+      handleInputChange(fieldIndex, file);
+      toast({
+        title: "파일 업로드 완료",
+        description: `${file.name} 파일이 업로드되었습니다.`,
+      });
+    }
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -365,22 +391,47 @@ export default function DocumentGenerator({ featureId, companyInfo, onClose }: D
                           <Upload className="w-4 h-4 text-indigo-500" />
                           <span>{field.label}{field.required && ' *'}</span>
                         </Label>
-                        <div className="border-2 border-dashed border-indigo-200 rounded-2xl p-6 bg-gradient-to-r from-indigo-50 to-purple-50 hover:border-indigo-300 transition-colors">
+                        <div 
+                          className={`border-2 border-dashed rounded-2xl p-6 transition-all duration-200 cursor-pointer ${
+                            dragOver === index 
+                              ? 'border-blue-400 bg-blue-50 scale-105' 
+                              : 'border-indigo-200 bg-gradient-to-r from-indigo-50 to-purple-50 hover:border-indigo-300'
+                          }`}
+                          onDragOver={(e) => handleDragOver(e, index)}
+                          onDragLeave={handleDragLeave}
+                          onDrop={(e) => handleDrop(e, index)}
+                        >
                           <div className="text-center">
                             {isAudioFile ? (
-                              <Mic className="w-12 h-12 text-indigo-400 mx-auto mb-3" />
+                              <Mic className={`w-12 h-12 mx-auto mb-3 transition-colors ${
+                                dragOver === index ? 'text-blue-500' : 'text-indigo-400'
+                              }`} />
                             ) : (
-                              <Upload className="w-12 h-12 text-indigo-400 mx-auto mb-3" />
+                              <Upload className={`w-12 h-12 mx-auto mb-3 transition-colors ${
+                                dragOver === index ? 'text-blue-500' : 'text-indigo-400'
+                              }`} />
                             )}
-                            <p className="text-sm font-medium text-gray-700 mb-2">
-                              {isAudioFile ? '음성 파일을 드래그하거나 클릭해서 업로드' : '파일을 드래그하거나 클릭해서 업로드'}
+                            <p className={`text-sm font-medium mb-2 transition-colors ${
+                              dragOver === index ? 'text-blue-700' : 'text-gray-700'
+                            }`}>
+                              {dragOver === index 
+                                ? '여기에 파일을 놓으세요' 
+                                : isAudioFile 
+                                ? '음성 파일을 드래그하거나 클릭해서 업로드' 
+                                : '파일을 드래그하거나 클릭해서 업로드'
+                              }
                             </p>
                             <p className="text-xs text-gray-500">{field.placeholder}</p>
+                            {formData[fieldKey] && (
+                              <p className="text-xs text-green-600 mt-2 font-medium">
+                                ✓ {formData[fieldKey].name || '파일이 선택되었습니다'}
+                              </p>
+                            )}
                             <Input
                               type="file"
                               accept={isAudioFile ? "audio/*" : "*"}
                               onChange={(e) => handleInputChange(index, e.target.files?.[0])}
-                              className="mt-3 cursor-pointer"
+                              className="mt-3 cursor-pointer opacity-0 absolute inset-0"
                             />
                           </div>
                         </div>
