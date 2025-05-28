@@ -1,7 +1,7 @@
 import { eq } from "drizzle-orm";
 import { db } from "./db";
 import { users, documents, company, type User, type Document, type Company, type InsertDocument } from "@shared/schema";
-const PptxGenJS = require("pptxgenjs");
+import PptxGenJS from "pptxgenjs";
 import puppeteer from "puppeteer";
 
 // Real PDF generation using puppeteer
