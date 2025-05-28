@@ -75,7 +75,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Create safe filename using only English characters and numbers
       const safeTitle = document.title
-        .replace(/[^a-zA-Z0-9가-힣]/g, '')  // Keep only alphanumeric and Korean characters
+        .replace(/[^a-zA-Z0-9]/g, '_')  // Replace all non-alphanumeric with underscore
         .substring(0, 20);  // Limit length
       
       const timestamp = new Date().toISOString().slice(0, 10).replace(/-/g, '');
@@ -85,7 +85,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const pptxBuffer = await storage.generatePPTX(document);
       
       res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.presentationml.presentation');
-      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+      res.setHeader('Content-Disposition', `attachment; filename*=UTF-8''${encodeURIComponent(filename)}`);
       res.send(pptxBuffer);
     } catch (error) {
       console.error("Error downloading document:", error);
