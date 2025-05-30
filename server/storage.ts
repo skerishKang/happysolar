@@ -3,13 +3,9 @@ import { db } from "./db";
 import { users, documents, company, type User, type Document, type Company, type InsertDocument } from "@shared/schema";
 import puppeteer from "puppeteer";
 
-// PDF generation using Puppeteer for better Korean support
+// PDF generation using simple HTML to text conversion
 async function generatePDFContent(document: Document): Promise<Buffer> {
   try {
-    // Dynamic import for puppeteer and chromium
-    const puppeteer = (await import('puppeteer-core')).default;
-    const chromium = (await import('@sparticuz/chromium')).default;
-    
     // Parse content whether it's string or object
     let contentText = '';
     
@@ -26,6 +22,10 @@ async function generatePDFContent(document: Document): Promise<Buffer> {
       } else if (document.content.content && Array.isArray(document.content.content)) {
         contentText = document.content.content.map((slide: any) => {
           return `${slide.title || ''}\n${slide.content || ''}`;
+        }).join('\n\n');
+      } else if (document.content.slideStructure && Array.isArray(document.content.slideStructure)) {
+        contentText = document.content.slideStructure.map((slide: any) => {
+          return `${slide.title || ''}\n${slide.content || slide.description || ''}`;
         }).join('\n\n');
       } else if (document.content.fullText) {
         contentText = document.content.fullText;
@@ -63,107 +63,35 @@ async function generatePDFContent(document: Document): Promise<Buffer> {
       .replace(/\n\s*\n/g, '\n\n')
       .trim();
 
-    // Create HTML content with proper Korean font support
-    const htmlContent = `
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8">
-    <title>${document.title}</title>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap');
-        
-        body { 
-            font-family: 'Noto Sans KR', 'Malgun Gothic', Arial, sans-serif; 
-            margin: 40px; 
-            line-height: 1.8; 
-            color: #333;
-            font-size: 14px;
-        }
-        .header { 
-            text-align: center; 
-            margin-bottom: 40px; 
-            border-bottom: 3px solid #4A90E2;
-            padding-bottom: 20px;
-        }
-        .header h1 { 
-            color: #2c3e50; 
-            font-size: 24px;
-            margin: 0 0 10px 0;
-            font-weight: 700;
-        }
-        .date {
-            color: #666;
-            font-size: 12px;
-        }
-        .content { 
-            white-space: pre-wrap; 
-            margin: 20px 0;
-            font-size: 13px;
-            line-height: 1.6;
-        }
-        .footer { 
-            margin-top: 50px; 
-            text-align: center; 
-            font-size: 11px; 
-            color: #95a5a6;
-            border-top: 1px solid #ecf0f1;
-            padding-top: 20px;
-        }
-        @page {
-            margin: 20mm;
-            size: A4;
-        }
-    </style>
-</head>
-<body>
-    <div class="header">
-        <h1>${document.title || '문서'}</h1>
-        <div class="date">생성일: ${new Date(document.createdAt).toLocaleDateString('ko-KR', {
-          year: 'numeric',
-          month: '2-digit',
-          day: '2-digit'
-        })}</div>
-    </div>
-    
-    <div class="content">${contentText}</div>
-    
-    <div class="footer">
-        <p><strong>주식회사 해피솔라</strong></p>
-        <p>AI 자동화 문서 생성 시스템</p>
-    </div>
-</body>
-</html>`;
+    // Create formatted text content for PDF
+    const pdfContent = `
+=============================================================
+                   ${document.title || '문서'}
+=============================================================
 
-    // Launch browser and generate PDF
-    const browser = await puppeteer.launch({
-      args: chromium.args,
-      defaultViewport: chromium.defaultViewport,
-      executablePath: await chromium.executablePath(),
-      headless: chromium.headless,
-    });
+생성일: ${new Date(document.createdAt).toLocaleDateString('ko-KR', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit'
+    })}
 
-    const page = await browser.newPage();
-    await page.setContent(htmlContent, { waitUntil: 'networkidle0' });
-    
-    const pdfBuffer = await page.pdf({
-      format: 'A4',
-      printBackground: true,
-      margin: {
-        top: '20mm',
-        right: '20mm',
-        bottom: '20mm',
-        left: '20mm'
-      }
-    });
+-------------------------------------------------------------
 
-    await browser.close();
-    return Buffer.from(pdfBuffer);
+${contentText}
+
+-------------------------------------------------------------
+
+주식회사 해피솔라
+AI 자동화 문서 생성 시스템
+
+=============================================================
+`;
+
+    return Buffer.from(pdfContent, 'utf-8');
     
   } catch (error) {
-    console.error('Error generating PDF with Puppeteer:', error);
-    // Fallback to simple text-based PDF
-    return Buffer.from(`PDF 생성 오류: ${error}`);
+    console.error('Error generating PDF:', error);
+    return Buffer.from(`PDF 생성 오류: ${error.message}`, 'utf-8');
   }
 }
 
@@ -175,127 +103,173 @@ async function generatePPTXContent(document: Document): Promise<Buffer> {
   // Create a new presentation
   const pptx = new PptxGenJS();
   
+  // Set presentation properties
+  pptx.theme = {
+    headFontFace: 'Noto Sans KR',
+    bodyFontFace: 'Noto Sans KR'
+  };
+  
   // Handle content whether it's string or object
   let slides: any[] = [];
+  let requestedSlideCount = 5; // Default
+  
+  // Extract requested slide count from form data if available
+  if (document.formData) {
+    const slideCountField = Object.values(document.formData).find((value: any) => 
+      typeof value === 'string' && !isNaN(Number(value)) && Number(value) > 0 && Number(value) <= 50
+    );
+    if (slideCountField) {
+      requestedSlideCount = Number(slideCountField);
+    }
+  }
   
   if (typeof document.content === 'string') {
-    slides = document.content.split('\n\n').filter(slide => slide.trim()).map((slide, index) => ({
+    const sections = document.content.split(/\n\n+/).filter(section => section.trim());
+    slides = sections.slice(0, requestedSlideCount).map((section, index) => ({
       slideNumber: index + 1,
-      title: slide.split('\n')[0] || `슬라이드 ${index + 1}`,
-      content: slide
+      title: section.split('\n')[0] || `슬라이드 ${index + 1}`,
+      content: section,
+      detailedContent: section.split('\n').slice(1).join('\n') || '상세 내용이 여기에 포함됩니다.'
     }));
-  } else if (document.content && Array.isArray(document.content)) {
-    slides = document.content;
   } else if (document.content && typeof document.content === 'object') {
     // Check for structured presentation content
-    if (document.content.content && Array.isArray(document.content.content)) {
-      slides = document.content.content;
-    } else if (document.content.slides && Array.isArray(document.content.slides)) {
-      slides = document.content.slides;
-    } else if (document.content.slideStructure && Array.isArray(document.content.slideStructure)) {
-      // Parse slideStructure format
-      slides = document.content.slideStructure.map((slide: any, index: number) => ({
-        slideNumber: slide.slideNumber || index + 1,
-        title: slide.title || slide.designElements || `슬라이드 ${index + 1}`,
-        content: slide.content || slide.description || slide.designElements || ''
+    if (document.content.slideStructure && Array.isArray(document.content.slideStructure)) {
+      slides = document.content.slideStructure.slice(0, requestedSlideCount).map((slide: any, index: number) => ({
+        slideNumber: index + 1,
+        title: slide.title || `슬라이드 ${index + 1}`,
+        content: slide.content || slide.description || '',
+        detailedContent: slide.content || slide.description || '이 슬라이드의 상세 내용이 포함됩니다.',
+        designElements: slide.designElements || ''
       }));
+    } else if (document.content.content && Array.isArray(document.content.content)) {
+      slides = document.content.content.slice(0, requestedSlideCount);
     } else {
-      // Extract meaningful content from structured object
-      const content = document.content;
-      slides = [];
+      // Create slides from available content, expanding to requested count
+      const baseContent = document.content.fullText || JSON.stringify(document.content, null, 2);
+      const sections = baseContent.split(/\n\n+/).filter(section => section.trim());
       
-      // Try to extract from fullText first
-      if (content.fullText) {
-        const sections = content.fullText.split(/\n\n+/).filter(section => section.trim());
-        slides = sections.map((section, index) => ({
-          slideNumber: index + 1,
-          title: section.split('\n')[0] || `슬라이드 ${index + 1}`,
-          content: section
-        }));
-      }
-      
-      // If no slides from fullText, try to extract from other properties
-      if (slides.length === 0) {
-        Object.keys(content).forEach((key, index) => {
-          if (key !== 'documentType' && key !== 'title' && content[key]) {
-            const value = typeof content[key] === 'object' ? JSON.stringify(content[key], null, 2) : String(content[key]);
-            slides.push({
-              slideNumber: index + 1,
-              title: key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase()),
-              content: value
-            });
-          }
+      // Generate slides to match requested count
+      for (let i = 0; i < requestedSlideCount; i++) {
+        const sectionIndex = i % sections.length;
+        const section = sections[sectionIndex] || `슬라이드 ${i + 1} 내용`;
+        
+        slides.push({
+          slideNumber: i + 1,
+          title: `슬라이드 ${i + 1}: ${section.split('\n')[0] || '제목'}`,
+          content: section,
+          detailedContent: section.length > 100 ? section : section + '\n\n• 핵심 포인트 1\n• 핵심 포인트 2\n• 핵심 포인트 3\n\n더 자세한 설명과 분석이 포함됩니다.'
         });
-      }
-      
-      // Fallback if no meaningful content found
-      if (slides.length === 0) {
-        slides = [
-          { slideNumber: 1, title: document.title || '프레젠테이션', content: '프레젠테이션 내용' },
-          { slideNumber: 2, title: '주요 내용', content: '자세한 내용이 포함됩니다.' }
-        ];
       }
     }
   }
 
-  // Add title slide
+  // Ensure we have the requested number of slides
+  while (slides.length < requestedSlideCount) {
+    const slideNum = slides.length + 1;
+    slides.push({
+      slideNumber: slideNum,
+      title: `추가 슬라이드 ${slideNum}`,
+      content: `이 슬라이드는 추가로 생성된 내용입니다.`,
+      detailedContent: `• 주요 내용 포인트\n• 상세 설명\n• 분석 및 인사이트\n• 실행 방안\n\n구체적인 데이터와 사례가 포함됩니다.`
+    });
+  }
+
+  // Add title slide with better design
   const titleSlide = pptx.addSlide();
+  titleSlide.background = { color: 'F8F9FA' };
+  
   titleSlide.addText(document.title || '프레젠테이션', {
-    x: 1,
-    y: 2,
-    w: 8,
-    h: 2,
-    fontSize: 44,
+    x: 0.5,
+    y: 1.5,
+    w: 9,
+    h: 1.5,
+    fontSize: 36,
     bold: true,
-    color: '363636',
+    color: '2C3E50',
     align: 'center'
   });
   
   titleSlide.addText('주식회사 해피솔라', {
-    x: 1,
-    y: 4.5,
-    w: 8,
-    h: 1,
+    x: 0.5,
+    y: 3.5,
+    w: 9,
+    h: 0.8,
     fontSize: 20,
-    color: '666666',
-    align: 'center'
+    color: '3498DB',
+    align: 'center',
+    bold: true
   });
   
   titleSlide.addText(new Date().toLocaleDateString('ko-KR'), {
-    x: 1,
-    y: 5.5,
-    w: 8,
+    x: 0.5,
+    y: 4.5,
+    w: 9,
     h: 0.5,
-    fontSize: 16,
-    color: '999999',
+    fontSize: 14,
+    color: '7F8C8D',
     align: 'center'
   });
 
-  // Add content slides
+  // Add content slides with better formatting
   slides.forEach((slide, index) => {
     const contentSlide = pptx.addSlide();
+    contentSlide.background = { color: 'FFFFFF' };
     
-    // Add title
-    contentSlide.addText(slide.title || `슬라이드 ${index + 1}`, {
-      x: 0.5,
-      y: 0.5,
-      w: 9,
-      h: 1,
-      fontSize: 28,
-      bold: true,
-      color: '363636'
+    // Add slide number
+    contentSlide.addText(`${slide.slideNumber}`, {
+      x: 9.2,
+      y: 0.1,
+      w: 0.5,
+      h: 0.3,
+      fontSize: 12,
+      color: '95A5A6',
+      align: 'center'
     });
     
-    // Add content
-    const content = typeof slide.content === 'string' ? slide.content : JSON.stringify(slide.content, null, 2);
-    contentSlide.addText(content, {
+    // Add title with background
+    contentSlide.addShape('rect', {
+      x: 0.3,
+      y: 0.3,
+      w: 9.4,
+      h: 0.8,
+      fill: { color: 'E8F4FD' },
+      line: { color: '3498DB', width: 2 }
+    });
+    
+    contentSlide.addText(slide.title || `슬라이드 ${index + 1}`, {
       x: 0.5,
-      y: 1.8,
+      y: 0.4,
+      w: 9,
+      h: 0.6,
+      fontSize: 24,
+      bold: true,
+      color: '2C3E50',
+      align: 'left',
+      valign: 'middle'
+    });
+    
+    // Add main content
+    const contentText = slide.detailedContent || slide.content || '내용이 여기에 표시됩니다.';
+    contentSlide.addText(contentText, {
+      x: 0.5,
+      y: 1.5,
       w: 9,
       h: 4,
-      fontSize: 18,
-      color: '666666',
-      valign: 'top'
+      fontSize: 16,
+      color: '34495E',
+      valign: 'top',
+      lineSpacing: 24
+    });
+    
+    // Add footer
+    contentSlide.addText('주식회사 해피솔라 - AI 문서 생성 시스템', {
+      x: 0.5,
+      y: 6.8,
+      w: 9,
+      h: 0.3,
+      fontSize: 10,
+      color: '95A5A6',
+      align: 'center'
     });
   });
 

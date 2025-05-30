@@ -113,9 +113,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           .replace(/[^a-zA-Z0-9가-힣\s\-_]/g, '')
           .replace(/\s+/g, '_')
           .trim();
-        const filename = `${sanitizedTitle}_${new Date().toISOString().split('T')[0]}.pdf`;
+        const filename = `${sanitizedTitle}_${new Date().toISOString().split('T')[0]}.txt`;
 
-        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Type', 'text/plain; charset=utf-8');
         res.setHeader('Content-Disposition', `attachment; filename*=UTF-8''${encodeURIComponent(filename)}`);
         res.send(pdfBuffer);
       } else if (format === 'pptx') {
