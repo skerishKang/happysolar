@@ -423,7 +423,9 @@ async function generatePPTXContent(document: Document): Promise<Buffer> {
     
     // Add content with icons and formatting
     let yPos = 1.8;
-    contentLines.forEach((line, lineIndex) => {
+    for (let lineIndex = 0; lineIndex < contentLines.length; lineIndex++) {
+      const line = contentLines[lineIndex];
+      
       if (line.includes('•') || line.includes('-')) {
         // Bullet point with custom icon
         contentSlide.addShape('circle', {
@@ -448,7 +450,7 @@ async function generatePPTXContent(document: Document): Promise<Buffer> {
       yPos += 0.35;
       
       if (yPos > 5.8) break; // Prevent overflow
-    });
+    }
     
     // Add data visualization if content contains numbers
     if (contentText.match(/\d+%|\d+억|\d+만|성장|증가|효율/)) {
