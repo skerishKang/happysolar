@@ -126,14 +126,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
             .replace(/[^a-zA-Z0-9가-힣\s\-_]/g, '')
             .replace(/\s+/g, '_')
             .trim();
-          const filename = `${sanitizedTitle}_${new Date().toISOString().split('T')[0]}.html`;
+          const filename = `${sanitizedTitle}_${new Date().toISOString().split('T')[0]}.txt`;
 
-          // HTML 파일로 제공 (PDF 변환 라이브러리 문제로 인해)
-          res.setHeader('Content-Type', 'text/html; charset=utf-8');
+          // 텍스트 파일로 제공 (구조화된 문서)
+          res.setHeader('Content-Type', 'text/plain; charset=utf-8');
           res.setHeader('Content-Disposition', `attachment; filename*=UTF-8''${encodeURIComponent(filename)}`);
           res.send(pdfBuffer);
           
-          console.log('PDF (HTML) download completed');
+          console.log('PDF (Text) download completed');
         } catch (pdfError) {
           console.error('PDF generation error:', pdfError);
           return res.status(500).json({ error: 'PDF generation failed' });
