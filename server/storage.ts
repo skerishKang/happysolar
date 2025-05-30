@@ -442,6 +442,8 @@ function generateTitleSlideHTML(title: string): string {
 // 간단한 PDF 생성 - HTML을 PDF로 직접 변환
 async function generatePDFContent(document: Document): Promise<Buffer> {
   try {
+    console.log('Starting PDF generation for document:', document.id);
+    
     let contentText = '';
     let slides: any[] = [];
     
@@ -460,70 +462,79 @@ async function generatePDFContent(document: Document): Promise<Buffer> {
     <head>
       <meta charset="UTF-8">
       <style>
-        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;700&display=swap');
-        @page { margin: 20mm; size: A4; }
-        
         body {
-          font-family: 'Noto Sans KR', 'Malgun Gothic', '맑은 고딕', Arial, sans-serif;
-          margin: 0;
-          padding: 20px;
+          font-family: Arial, sans-serif;
+          margin: 20mm;
           line-height: 1.6;
           color: #333;
+          font-size: 12pt;
         }
         
         .header {
           text-align: center;
-          margin-bottom: 40px;
-          padding: 30px;
-          background: linear-gradient(135deg, #3498db, #2980b9);
+          margin-bottom: 30px;
+          padding: 20px;
+          background: #3498db;
           color: white;
-          border-radius: 15px;
+          border-radius: 10px;
         }
         
-        .title { font-size: 2.5em; font-weight: 700; margin-bottom: 15px; }
-        .company { font-size: 1.3em; margin-bottom: 10px; }
-        .date { font-size: 1.1em; opacity: 0.9; }
+        .title { 
+          font-size: 24pt; 
+          font-weight: bold; 
+          margin-bottom: 10px; 
+        }
+        
+        .company { 
+          font-size: 14pt; 
+          margin-bottom: 5px; 
+        }
+        
+        .date { 
+          font-size: 12pt; 
+          opacity: 0.9; 
+        }
         
         .content {
           background: white;
-          padding: 40px;
+          padding: 20px;
           border: 1px solid #ddd;
-          border-radius: 15px;
-          margin-bottom: 30px;
+          border-radius: 10px;
+          margin-bottom: 20px;
         }
         
         .slide {
-          margin-bottom: 50px;
-          padding: 30px;
-          border-left: 5px solid #3498db;
+          margin-bottom: 30px;
+          padding: 20px;
+          border-left: 4px solid #3498db;
           background: #f8f9fa;
-          border-radius: 10px;
+          border-radius: 8px;
           page-break-inside: avoid;
         }
         
         .slide-title {
-          font-size: 1.8em;
-          font-weight: 700;
+          font-size: 16pt;
+          font-weight: bold;
           color: #2c3e50;
-          margin-bottom: 20px;
-          padding-bottom: 10px;
-          border-bottom: 2px solid #3498db;
+          margin-bottom: 15px;
+          padding-bottom: 8px;
+          border-bottom: 1px solid #3498db;
         }
         
         .slide-content {
-          font-size: 1.1em;
-          line-height: 1.8;
+          font-size: 11pt;
+          line-height: 1.6;
           color: #34495e;
         }
         
         .bullet-point {
-          margin: 10px 0;
-          padding-left: 20px;
+          margin: 8px 0;
+          padding-left: 15px;
           position: relative;
         }
         
         .bullet-point::before {
-          content: '●';
+          content: '•';
           color: #3498db;
           font-weight: bold;
           position: absolute;
@@ -532,18 +543,26 @@ async function generatePDFContent(document: Document): Promise<Buffer> {
         
         .footer {
           text-align: center;
-          margin-top: 40px;
-          padding: 20px;
+          margin-top: 30px;
+          padding: 15px;
           background: #34495e;
           color: white;
-          border-radius: 15px;
-          font-size: 0.9em;
+          border-radius: 10px;
+          font-size: 10pt;
+        }
+        
+        @media print {
+          body { margin: 0; }
+          .header, .content, .slide, .footer { 
+            margin: 10px 0; 
+            page-break-inside: avoid; 
+          }
         }
       </style>
     </head>
     <body>
       <div class="header">
-        <div class="title">${document.title || '문서'}</div>
+        <div class="title">${(document.title || '문서').replace(/[<>&"']/g, '')}</div>
         <div class="company">주식회사 해피솔라</div>
         <div class="date">생성일: ${new Date(document.createdAt).toLocaleDateString('ko-KR')}</div>
       </div>
@@ -552,20 +571,23 @@ async function generatePDFContent(document: Document): Promise<Buffer> {
         ${slides.length > 0 ? 
           slides.map((slide: any, index: number) => `
             <div class="slide">
-              <div class="slide-title">${slide.title || `슬라이드 ${index + 1}`}</div>
+              <div class="slide-title">${(slide.title || `슬라이드 ${index + 1}`).replace(/[<>&"']/g, '')}</div>
               <div class="slide-content">
                 ${(slide.detailedContent || slide.content || slide.description || '').split('\n').map((line: string) => {
-                  if (line.includes('•') || line.includes('-')) {
-                    return `<div class="bullet-point">${line.replace(/^[•\-]\s*/, '')}</div>`;
-                  } else if (line.trim()) {
-                    return `<div style="margin: 15px 0;">${line}</div>`;
+                  const cleanLine = line.replace(/[<>&"']/g, '').trim();
+                  if (cleanLine.includes('•') || cleanLine.includes('-')) {
+                    return `<div class="bullet-point">${cleanLine.replace(/^[•\-]\s*/, '')}</div>`;
+                  } else if (cleanLine) {
+                    return `<div style="margin: 10px 0;">${cleanLine}</div>`;
                   }
                   return '';
                 }).join('')}
               </div>
             </div>
           `).join('') :
-          `<div class="slide-content">${contentText.split('\n').map(line => `<div style="margin: 15px 0;">${line}</div>`).join('')}</div>`
+          `<div class="slide-content">${contentText.split('\n').map(line => 
+            `<div style="margin: 10px 0;">${line.replace(/[<>&"']/g, '')}</div>`
+          ).join('')}</div>`
         }
       </div>
       
@@ -576,66 +598,52 @@ async function generatePDFContent(document: Document): Promise<Buffer> {
     </body>
     </html>`;
 
-    // HTML을 PDF로 변환 (wkhtmltopdf 사용)
-    try {
-      const wkhtmltopdf = (await import('wkhtmltopdf')).default;
-      
-      return new Promise((resolve, reject) => {
-        const options = {
-          pageSize: 'A4',
-          marginTop: '20mm',
-          marginRight: '15mm',
-          marginBottom: '20mm',
-          marginLeft: '15mm',
-          encoding: 'UTF-8',
-          enableLocalFileAccess: true
-        };
-        
-        wkhtmltopdf(htmlContent, options, (err: any, stream: any) => {
-          if (err) {
-            reject(err);
-            return;
-          }
-          
-          const chunks: Buffer[] = [];
-          stream.on('data', (chunk: Buffer) => chunks.push(chunk));
-          stream.on('end', () => resolve(Buffer.concat(chunks)));
-          stream.on('error', reject);
-        });
-      });
-    } catch (error) {
-      console.warn('wkhtmltopdf failed, using simple HTML fallback');
-      // 기본 HTML 반환
-      return Buffer.from(htmlContent, 'utf-8');
-    }
+    console.log('HTML content generated, returning as buffer');
+    // HTML 파일로 직접 반환 (PDF 변환 라이브러리 없이)
+    return Buffer.from(htmlContent, 'utf-8');
     
   } catch (error) {
     console.error('PDF generation failed:', error);
+    
+    // 최소한의 fallback HTML
     const fallbackHtml = `
     <!DOCTYPE html>
     <html>
     <head>
       <meta charset="UTF-8">
-      <title>${document.title || '문서'}</title>
+      <title>${(document.title || '문서').replace(/[<>&"']/g, '')}</title>
       <style>
         body { 
-          font-family: 'Noto Sans KR', '맑은 고딕', Arial, sans-serif; 
+          font-family: Arial, sans-serif; 
           margin: 20px; 
           line-height: 1.6; 
+          font-size: 12pt;
         }
-        h1 { color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 10px; }
-        .content { margin: 20px 0; padding: 20px; background: #f8f9fa; border-radius: 8px; }
+        h1 { 
+          color: #2c3e50; 
+          border-bottom: 2px solid #3498db; 
+          padding-bottom: 10px; 
+        }
+        .content { 
+          margin: 20px 0; 
+          padding: 20px; 
+          background: #f8f9fa; 
+          border-radius: 8px; 
+        }
       </style>
     </head>
     <body>
-      <h1>${document.title || '문서'}</h1>
+      <h1>${(document.title || '문서').replace(/[<>&"']/g, '')}</h1>
       <p><strong>회사:</strong> 주식회사 해피솔라</p>
       <p><strong>생성일:</strong> ${new Date(document.createdAt).toLocaleDateString('ko-KR')}</p>
       <div class="content">
         ${typeof document.content === 'string' ? 
-          document.content.replace(/\n/g, '<br>') : 
-          JSON.stringify(document.content, null, 2).replace(/\n/g, '<br>')
+          document.content.replace(/[<>&"']/g, '').replace(/\n/g, '<br>') : 
+          '문서 내용을 불러올 수 없습니다.'
         }
+      </div>
+      <div style="margin-top: 30px; text-align: center; color: #666; font-size: 10pt;">
+        주식회사 해피솔라 - AI 문서 생성 시스템
       </div>
     </body>
     </html>`;
@@ -775,8 +783,43 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getDocument(id: string): Promise<Document | undefined> {
-    const [document] = await db.select().from(documents).where(eq(documents.id, parseInt(id)));
-    return document || undefined;
+    try {
+      console.log('Fetching document with ID:', id);
+      
+      // ID 유효성 검사
+      const numericId = parseInt(id);
+      if (isNaN(numericId)) {
+        console.error('Invalid document ID:', id);
+        return undefined;
+      }
+      
+      // 재시도 로직
+      let attempts = 0;
+      const maxAttempts = 3;
+      
+      while (attempts < maxAttempts) {
+        try {
+          const [document] = await db.select().from(documents).where(eq(documents.id, numericId));
+          console.log('Document fetched successfully:', document?.id);
+          return document || undefined;
+        } catch (error) {
+          attempts++;
+          console.error(`Database query attempt ${attempts} failed:`, error);
+          
+          if (attempts >= maxAttempts) {
+            throw error;
+          }
+          
+          // 잠시 대기 후 재시도
+          await new Promise(resolve => setTimeout(resolve, 1000 * attempts));
+        }
+      }
+      
+      return undefined;
+    } catch (error) {
+      console.error('Error fetching document:', error);
+      return undefined;
+    }
   }
 
   async getDocuments(userId?: number): Promise<Document[]> {

@@ -101,45 +101,70 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const documentId = req.params.id;
       const format = req.query.format as string || 'pptx';
+      
+      console.log(`Download request: ID=${documentId}, format=${format}`);
+      
+      // ID 유효성 검사
+      if (!documentId || isNaN(parseInt(documentId))) {
+        console.error('Invalid document ID:', documentId);
+        return res.status(400).json({ error: 'Invalid document ID' });
+      }
+
       const document = await storage.getDocument(documentId);
 
       if (!document) {
+        console.error('Document not found:', documentId);
         return res.status(404).json({ error: 'Document not found' });
       }
 
+      console.log('Document found:', document.title);
+
       if (format === 'pdf') {
-        const pdfBuffer = await storage.generatePDF(document);
-        const filename = `${document.title || 'document'}_${new Date().toISOString().split('T')[0]}.pdf`;
+        try {
+          const pdfBuffer = await storage.generatePDF(document);
+          const sanitizedTitle = (document.title || 'document')
+            .replace(/[^a-zA-Z0-9가-힣\s\-_]/g, '')
+            .replace(/\s+/g, '_')
+            .trim();
+          const filename = `${sanitizedTitle}_${new Date().toISOString().split('T')[0]}.html`;
 
-        // Always try to serve as PDF first
-        let contentType = 'application/pdf';
-
-        // Check if it's HTML fallback
-        const content = pdfBuffer.toString('utf8', 0, 100); // Check first 100 chars
-        if (content.includes('<!DOCTYPE html>')) {
-          contentType = 'text/html';
+          // HTML 파일로 제공 (PDF 변환 라이브러리 문제로 인해)
+          res.setHeader('Content-Type', 'text/html; charset=utf-8');
+          res.setHeader('Content-Disposition', `attachment; filename*=UTF-8''${encodeURIComponent(filename)}`);
+          res.send(pdfBuffer);
+          
+          console.log('PDF (HTML) download completed');
+        } catch (pdfError) {
+          console.error('PDF generation error:', pdfError);
+          return res.status(500).json({ error: 'PDF generation failed' });
         }
-
-        res.setHeader('Content-Type', contentType);
-        res.setHeader('Content-Disposition', `attachment; filename*=UTF-8''${encodeURIComponent(filename)}`);
-        res.send(pdfBuffer);
       } else if (format === 'pptx') {
-        const pptxBuffer = await storage.generatePPTX(document);
-        const sanitizedTitle = (document.title || 'document')
-          .replace(/[^a-zA-Z0-9가-힣\s\-_]/g, '')
-          .replace(/\s+/g, '_')
-          .trim();
-        const filename = `${sanitizedTitle}_${new Date().toISOString().split('T')[0]}.pptx`;
+        try {
+          const pptxBuffer = await storage.generatePPTX(document);
+          const sanitizedTitle = (document.title || 'document')
+            .replace(/[^a-zA-Z0-9가-힣\s\-_]/g, '')
+            .replace(/\s+/g, '_')
+            .trim();
+          const filename = `${sanitizedTitle}_${new Date().toISOString().split('T')[0]}.pptx`;
 
-        res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.presentationml.presentation');
-        res.setHeader('Content-Disposition', `attachment; filename*=UTF-8''${encodeURIComponent(filename)}`);
-        res.send(pptxBuffer);
+          res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.presentationml.presentation');
+          res.setHeader('Content-Disposition', `attachment; filename*=UTF-8''${encodeURIComponent(filename)}`);
+          res.send(pptxBuffer);
+          
+          console.log('PPTX download completed');
+        } catch (pptxError) {
+          console.error('PPTX generation error:', pptxError);
+          return res.status(500).json({ error: 'PPTX generation failed' });
+        }
       } else {
         return res.status(400).json({ error: 'Invalid format. Use pdf or pptx' });
       }
     } catch (error) {
       console.error('Download error:', error);
-      res.status(500).json({ error: 'Failed to generate document' });
+      res.status(500).json({ 
+        error: 'Failed to process download request',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      });
     }
   });
 
