@@ -109,19 +109,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       if (format === 'pdf') {
         const pdfBuffer = await storage.generatePDF(document);
-        const sanitizedTitle = (document.title || 'document').replace(/[^a-zA-Z0-9가-힣\s]/g, '').trim();
+        const sanitizedTitle = (document.title || 'document')
+          .replace(/[^a-zA-Z0-9가-힣\s\-_]/g, '')
+          .replace(/\s+/g, '_')
+          .trim();
         const filename = `${sanitizedTitle}_${new Date().toISOString().split('T')[0]}.pdf`;
 
         res.setHeader('Content-Type', 'application/pdf');
-        res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(filename)}"`);
+        res.setHeader('Content-Disposition', `attachment; filename*=UTF-8''${encodeURIComponent(filename)}`);
         res.send(pdfBuffer);
       } else if (format === 'pptx') {
         const pptxBuffer = await storage.generatePPTX(document);
-        const sanitizedTitle = (document.title || 'document').replace(/[^a-zA-Z0-9가-힣\s]/g, '').trim();
+        const sanitizedTitle = (document.title || 'document')
+          .replace(/[^a-zA-Z0-9가-힣\s\-_]/g, '')
+          .replace(/\s+/g, '_')
+          .trim();
         const filename = `${sanitizedTitle}_${new Date().toISOString().split('T')[0]}.pptx`;
 
         res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.presentationml.presentation');
-        res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(filename)}"`);
+        res.setHeader('Content-Disposition', `attachment; filename*=UTF-8''${encodeURIComponent(filename)}`);
         res.send(pptxBuffer);
       } else {
         return res.status(400).json({ error: 'Invalid format. Use pdf or pptx' });
