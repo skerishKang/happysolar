@@ -262,9 +262,40 @@ async function generatePDFContent(document: Document): Promise<Buffer> {
     } catch (fallbackError) {
       console.error('Fallback PDF generation also failed:', fallbackError);
       
-      // 최종 폴백 - 간단한 텍스트 응답
-      const simpleContent = `${document.title || '문서'}\n\n생성일: ${new Date().toLocaleDateString('ko-KR')}\n회사: 주식회사 해피솔라\n\nPDF 생성 중 오류가 발생했습니다.`;
-      return Buffer.from(simpleContent, 'utf8');
+      // 최종 폴백 - HTML을 이용한 간단한 PDF 생성
+      try {
+        const htmlContent = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>${document.title || '문서'}</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 40px; line-height: 1.6; }
+    .header { text-align: center; border-bottom: 2px solid #333; padding-bottom: 20px; margin-bottom: 30px; }
+    .content { margin: 20px 0; }
+    .slide { margin: 30px 0; padding: 20px; border: 1px solid #ddd; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>${document.title || '문서'}</h1>
+    <p>주식회사 해피솔라</p>
+    <p>생성일: ${new Date().toLocaleDateString('ko-KR')}</p>
+  </div>
+  <div class="content">
+    <p>PDF 생성 환경에 제한이 있어 간단한 텍스트 형태로 제공됩니다.</p>
+    <p>문서 내용을 정상적으로 보시려면 PPTX 형태로 다운로드해주세요.</p>
+  </div>
+</body>
+</html>`;
+        
+        return Buffer.from(htmlContent, 'utf8');
+      } catch (finalError) {
+        console.error('Final fallback failed:', finalError);
+        const simpleContent = `${document.title || '문서'}\n\n생성일: ${new Date().toLocaleDateString('ko-KR')}\n회사: 주식회사 해피솔라\n\nPDF 생성 중 오류가 발생했습니다. PPTX 형태로 다운로드해주세요.`;
+        return Buffer.from(simpleContent, 'utf8');
+      }
     }
   }
 }
@@ -350,7 +381,7 @@ async function generatePPTXContent(document: Document): Promise<Buffer> {
             { color: '2ECC71', position: 100 }
           ]
         },
-        shadow: { type: 'outer', blur: 3, offset: 2, angle: 45, color: '000000', opacity: 0.3 }
+        shadow: { type: 'outer', blur: 3, offset: 2, angle: 45, color: '000000', opacity: 30 }
       });
 
       contentSlide.addText(`${index + 1}`, {
@@ -362,7 +393,7 @@ async function generatePPTXContent(document: Document): Promise<Buffer> {
       contentSlide.addText(slide.title || `슬라이드 ${index + 1}`, {
         x: 1.6, y: 0.3, w: 6.5, h: 1.2,
         fontSize: 36, bold: true, color: 'FFFFFF', align: 'left', valign: 'middle',
-        shadow: { type: 'outer', blur: 2, offset: 1, angle: 45, color: '000000', opacity: 0.5 }
+        shadow: { type: 'outer', blur: 2, offset: 1, angle: 45, color: '000000', opacity: 50 }
       });
 
       // 콘텐츠 영역 배경
@@ -370,26 +401,41 @@ async function generatePPTXContent(document: Document): Promise<Buffer> {
         x: 0.3, y: 2.2, w: 9.4, h: 4.3,
         fill: { color: 'F8F9FA' },
         line: { color: 'E9ECEF', width: 1 },
-        shadow: { type: 'outer', blur: 5, offset: 2, angle: 45, color: '000000', opacity: 0.1 }
+        shadow: { type: 'outer', blur: 5, offset: 2, angle: 45, color: '000000', opacity: 10 }
       });
 
       // 내용을 구조화하여 표시 - content 타입 체크 및 안전한 처리
       let content = '';
+      
+      // 여러 가지 content 필드에서 안전하게 텍스트 추출
+      const extractText = (data: any): string => {
+        if (typeof data === 'string') {
+          return data;
+        }
+        if (typeof data === 'object' && data !== null) {
+          // 객체에서 텍스트 필드들을 찾아서 조합
+          const textFields = ['text', 'content', 'description', 'details', 'body'];
+          for (const field of textFields) {
+            if (data[field] && typeof data[field] === 'string') {
+              return data[field];
+            }
+          }
+          // 배열인 경우 join
+          if (Array.isArray(data)) {
+            return data.map(item => extractText(item)).filter(Boolean).join('\n');
+          }
+          // 기본적으로 JSON.stringify하되 읽기 쉽게 포맷
+          return JSON.stringify(data, null, 2).replace(/[{}"]/g, '').replace(/,\s*\n/g, '\n').trim();
+        }
+        return String(data || '');
+      };
+
       if (slide.detailedContent) {
-        if (typeof slide.detailedContent === 'string') {
-          content = slide.detailedContent;
-        } else if (typeof slide.detailedContent === 'object') {
-          // 객체인 경우 문자열로 변환하거나 기본값 사용
-          content = slide.detailedContent.toString ? slide.detailedContent.toString() : JSON.stringify(slide.detailedContent);
-        }
+        content = extractText(slide.detailedContent);
       } else if (slide.content) {
-        if (typeof slide.content === 'string') {
-          content = slide.content;
-        } else if (typeof slide.content === 'object') {
-          content = slide.content.toString ? slide.content.toString() : JSON.stringify(slide.content);
-        }
-      } else if (slide.description && typeof slide.description === 'string') {
-        content = slide.description;
+        content = extractText(slide.content);
+      } else if (slide.description) {
+        content = extractText(slide.description);
       } else {
         content = `• 팜솔라그룹 ${slide.title || `슬라이드 ${index + 1}`} 관련 내용
 • 태양광 발전 시설의 핵심 기술 및 솔루션
@@ -397,12 +443,15 @@ async function generatePPTXContent(document: Document): Promise<Buffer> {
 • 지속 가능한 에너지 솔루션 구현`;
       }
 
-      // 문자열이 아닌 경우 강제 변환
-      if (typeof content !== 'string') {
-        content = String(content);
+      // 빈 내용인 경우 기본값 설정
+      if (!content || content.trim() === '') {
+        content = `• ${slide.title || `슬라이드 ${index + 1}`}에 대한 상세 내용
+• 주요 특징 및 장점
+• 실행 방안 및 기대효과
+• 결론 및 다음 단계`;
       }
 
-      const contentLines = content.split('\n').filter(line => line.trim());
+      const contentLines = content.toString().split('\n').filter(line => line.trim());
       
       // 메인 콘텐츠
       const mainContent = contentLines.slice(0, 3).join('\n');

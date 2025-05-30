@@ -168,7 +168,39 @@ export default function DocumentGenerator({ featureId, companyInfo, onClose }: D
   const [dragOver, setDragOver] = useState<number | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [uploadedFiles, setUploadedFiles] = useState<any[]>([]);
+  const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
+  const [dragActive, setDragActive] = useState(false);
+
+  // 파일 업로드 시 자동으로 필드 채우기
+  const autoFillFromFiles = (files: File[]) => {
+    if (files.length === 0) return;
+
+    const file = files[0];
+    const fileName = file.name.replace(/\.[^/.]+$/, ""); // 확장자 제거
+
+    // 파일명에서 기본 정보 추출
+    if (!formData.field_0 || formData.field_0 === '') {
+      setFormData(prev => ({ ...prev, field_0: fileName }));
+    }
+
+    // 프레젠테이션의 경우 제목 자동 설정
+    if (featureId === 'presentation') {
+      if (!formData.field_4 || formData.field_4 === '') {
+        setFormData(prev => ({ ...prev, field_4: fileName || '사업 제안서' }));
+      }
+
+      // 회사명이 없으면 팜솔라로 기본 설정
+      if (!formData.field_3 || formData.field_3 === '') {
+        setFormData(prev => ({ ...prev, field_3: '팜솔라' }));
+      }
+      if (!formData.field_5 || formData.field_5 === '') {
+        setFormData(prev => ({ ...prev, field_5: '팜솔라' }));
+      }
+      if (!formData.field_8 || formData.field_8 === '') {
+        setFormData(prev => ({ ...prev, field_8: '팜솔라' }));
+      }
+    }
+  };
 
   const template = featureTemplates[featureId];
   if (!template) return null;
@@ -192,6 +224,7 @@ export default function DocumentGenerator({ featureId, companyInfo, onClose }: D
           title: "파일 업로드 완료",
           description: `${files.length}개 파일이 업로드되었습니다.`,
         });
+        autoFillFromFiles(Array.from(files));
       }
     } catch (error) {
       toast({
@@ -271,6 +304,7 @@ export default function DocumentGenerator({ featureId, companyInfo, onClose }: D
         title: "파일 업로드 완료",
         description: `${file.name} 파일이 업로드되었습니다.`,
       });
+      autoFillFromFiles(Array.from(files));
     }
   };
 
@@ -518,7 +552,7 @@ export default function DocumentGenerator({ featureId, companyInfo, onClose }: D
                           variant="ghost"
                           size="sm"
                           onClick={() => setUploadedFiles(prev => prev.filter((_, i) => i !== index))}
-                        >
+                        >```python
                           <X className="h-4 w-4" />
                         </Button>
                       </div>
