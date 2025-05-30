@@ -1,3 +1,4 @@
+
 import { eq } from "drizzle-orm";
 import { db } from "./db";
 import { users, documents, company, type User, type Document, type Company, type InsertDocument } from "@shared/schema";
@@ -85,10 +86,10 @@ async function generateSVGSlide(slideData: any, slideNumber: number, totalSlides
   return svgContent;
 }
 
-// Enhanced PDF generation without Puppeteer dependency issues
+// Enhanced PDF generation with better browser compatibility
 async function generatePDFContent(document: Document): Promise<Buffer> {
   try {
-    // Try using node-html-to-image as fallback for better compatibility
+    // Try using node-html-to-image for better compatibility
     const nodeHtmlToImage = (await import('node-html-to-image')).default;
 
     // Extract content from document
@@ -110,7 +111,6 @@ async function generatePDFContent(document: Document): Promise<Buffer> {
       contentText = '내용 처리 중...';
     }
 
-    // Create beautiful HTML for PDF
     // Create beautiful HTML with enhanced Korean font support
     const htmlContent = `
     <!DOCTYPE html>
@@ -122,10 +122,10 @@ async function generatePDFContent(document: Document): Promise<Buffer> {
         @font-face {
           font-family: 'Korean';
           src: local('Malgun Gothic'), local('맑은 고딕'), local('Apple Gothic'), local('Noto Sans KR');
-        }</old_str>
+        }
         
         body {
-          font-family: 'Korean', 'Malgun Gothic', '맑은 고딕', 'Apple Gothic', 'Noto Sans KR', 'Helvetica Neue', Arial, sans-serif;</old_str>
+          font-family: 'Korean', 'Malgun Gothic', '맑은 고딕', 'Apple Gothic', 'Noto Sans KR', 'Helvetica Neue', Arial, sans-serif;
           margin: 0;
           padding: 20px;
           line-height: 1.6;
@@ -247,9 +247,38 @@ async function generatePDFContent(document: Document): Promise<Buffer> {
     </body>
     </html>`;
 
-    const browser = await puppeteer.launch({
+    // Try node-html-to-image first for better compatibility
+    try {
+      const imageBuffer = await nodeHtmlToImage({
+        html: htmlContent,
+        type: 'pdf',
+        quality: 100,
+        encoding: 'buffer',
+        puppeteerArgs: {
+          args: [
+            '--no-sandbox',
+            '--disable-setuid-sandbox',
+            '--disable-dev-shm-usage',
+            '--disable-accelerated-2d-canvas',
+            '--disable-gpu'
+          ]
+        }
+      });
+      
+      if (Buffer.isBuffer(imageBuffer)) {
+        return imageBuffer;
+      }
+    } catch (nodeHtmlError) {
+      console.warn('node-html-to-image failed, trying Puppeteer:', nodeHtmlError);
+    }
+
+    // Fallback to Puppeteer with chromium
+    const puppeteer = await import('puppeteer-core');
+    const chromium = await import('@sparticuz/chromium');
+
+    const browser = await puppeteer.default.launch({
       args: [
-        ...chromium.args,
+        ...chromium.default.args,
         '--no-sandbox',
         '--disable-setuid-sandbox',
         '--disable-dev-shm-usage',
@@ -259,9 +288,9 @@ async function generatePDFContent(document: Document): Promise<Buffer> {
         '--disable-backgrounding-occluded-windows',
         '--disable-renderer-backgrounding'
       ],
-      defaultViewport: chromium.defaultViewport,
-      executablePath: await chromium.executablePath(),
-      headless: chromium.headless,
+      defaultViewport: chromium.default.defaultViewport,
+      executablePath: await chromium.default.executablePath(),
+      headless: chromium.default.headless,
     });
 
     const page = await browser.newPage();
@@ -289,7 +318,7 @@ async function generatePDFContent(document: Document): Promise<Buffer> {
     
   } catch (error) {
     console.error('PDF generation failed:', error);
-    // Fallback to basic HTML when Puppeteer fails
+    // Fallback to basic HTML when all methods fail
     const fallbackHtml = `
     <!DOCTYPE html>
     <html>
@@ -322,7 +351,7 @@ async function generatePDFContent(document: Document): Promise<Buffer> {
 // SVG-based PPTX generation for high-quality vector graphics
 async function generatePPTXContent(document: Document): Promise<Buffer> {
   // Dynamic import for CommonJS module
-  const PptxGenJS = (await import('pptxgenjs')).default;</old_str>
+  const PptxGenJS = (await import('pptxgenjs')).default;
   
   // Create a new presentation
   const pptx = new PptxGenJS();
@@ -474,50 +503,50 @@ async function generatePPTXContent(document: Document): Promise<Buffer> {
       ]},
       line: { width: 0 }
     });
-  }</old_str>
-  
-  // Decorative geometric shapes
-  titleSlide.addShape('triangle', {
-    x: 8.5, y: 0.5, w: 1.5, h: 1.5,
-    fill: { color: 'ffffff', transparency: 80 },
-    line: { width: 0 }
-  });
-  
-  titleSlide.addShape('circle', {
-    x: 0.2, y: 5.8, w: 1, h: 1,
-    fill: { color: 'ffffff', transparency: 70 },
-    line: { width: 0 }
-  });
-  
-  // Main title with modern styling
-  titleSlide.addText(document.title || '프레젠테이션', {
-    x: 0.5, y: 2, w: 9, h: 1.5,
-    fontSize: 42, bold: true, color: 'FFFFFF',
-    align: 'center', shadow: { type: 'outer', color: '000000', blur: 8, offset: 2, angle: 45 }
-  });
-  
-  // Subtitle with accent color
-  titleSlide.addText('AI 기반 스마트 솔루션', {
-    x: 0.5, y: 3.8, w: 9, h: 0.8,
-    fontSize: 18, color: 'F39C12', align: 'center', italic: true
-  });
-  
-  // Company branding
-  titleSlide.addShape('rect', {
-    x: 2, y: 5, w: 6, h: 1.2,
-    fill: { color: 'ffffff', transparency: 90 },
-    line: { color: 'ffffff', width: 1 }
-  });
-  
-  titleSlide.addText('주식회사 해피솔라', {
-    x: 2.2, y: 5.1, w: 5.6, h: 0.5,
-    fontSize: 24, bold: true, color: 'FFFFFF', align: 'center'
-  });
-  
-  titleSlide.addText(new Date().toLocaleDateString('ko-KR'), {
-    x: 2.2, y: 5.7, w: 5.6, h: 0.4,
-    fontSize: 14, color: 'BDC3C7', align: 'center'
-  });
+    
+    // Decorative geometric shapes
+    titleSlide.addShape('triangle', {
+      x: 8.5, y: 0.5, w: 1.5, h: 1.5,
+      fill: { color: 'ffffff', transparency: 80 },
+      line: { width: 0 }
+    });
+    
+    titleSlide.addShape('circle', {
+      x: 0.2, y: 5.8, w: 1, h: 1,
+      fill: { color: 'ffffff', transparency: 70 },
+      line: { width: 0 }
+    });
+    
+    // Main title with modern styling
+    titleSlide.addText(document.title || '프레젠테이션', {
+      x: 0.5, y: 2, w: 9, h: 1.5,
+      fontSize: 42, bold: true, color: 'FFFFFF',
+      align: 'center', shadow: { type: 'outer', color: '000000', blur: 8, offset: 2, angle: 45 }
+    });
+    
+    // Subtitle with accent color
+    titleSlide.addText('AI 기반 스마트 솔루션', {
+      x: 0.5, y: 3.8, w: 9, h: 0.8,
+      fontSize: 18, color: 'F39C12', align: 'center', italic: true
+    });
+    
+    // Company branding
+    titleSlide.addShape('rect', {
+      x: 2, y: 5, w: 6, h: 1.2,
+      fill: { color: 'ffffff', transparency: 90 },
+      line: { color: 'ffffff', width: 1 }
+    });
+    
+    titleSlide.addText('주식회사 해피솔라', {
+      x: 2.2, y: 5.1, w: 5.6, h: 0.5,
+      fontSize: 24, bold: true, color: 'FFFFFF', align: 'center'
+    });
+    
+    titleSlide.addText(new Date().toLocaleDateString('ko-KR'), {
+      x: 2.2, y: 5.7, w: 5.6, h: 0.4,
+      fontSize: 14, color: 'BDC3C7', align: 'center'
+    });
+  }
 
   // Add content slides with SVG-based vector graphics
   for (let i = 0; i < slides.length; i++) {
@@ -552,146 +581,147 @@ async function generatePPTXContent(document: Document): Promise<Buffer> {
           { color: '2980B9', position: 100 }
         ]},
         line: { width: 0 }
-      });</old_str>
-    
-    // Slide number with modern badge
-    contentSlide.addShape('circle', {
-      x: 9.2, y: 0.15, w: 0.6, h: 0.6,
-      fill: { color: 'E74C3C' },
-      line: { color: 'C0392B', width: 2 }
-    });
-    
-    contentSlide.addText(`${slide.slideNumber}`, {
-      x: 9.2, y: 0.15, w: 0.6, h: 0.6,
-      fontSize: 16, bold: true, color: 'FFFFFF',
-      align: 'center', valign: 'middle'
-    });
-    
-    // Main title with icon area
-    contentSlide.addShape('rect', {
-      x: 0.5, y: 0.2, w: 8.5, h: 0.8,
-      fill: { color: 'FFFFFF', transparency: 95 },
-      line: { width: 0 }
-    });
-    
-    // Icon placeholder (solar panel icon representation)
-    contentSlide.addShape('rect', {
-      x: 0.7, y: 0.3, w: 0.6, h: 0.6,
-      fill: { color: 'F39C12' },
-      line: { color: 'E67E22', width: 2 }
-    });
-    
-    contentSlide.addText('☀', {
-      x: 0.7, y: 0.3, w: 0.6, h: 0.6,
-      fontSize: 24, color: 'FFFFFF', align: 'center', valign: 'middle'
-    });
-    
-    // Title text
-    contentSlide.addText(slide.title || `슬라이드 ${index + 1}`, {
-      x: 1.5, y: 0.3, w: 7.3, h: 0.6,
-      fontSize: 26, bold: true, color: 'FFFFFF',
-      align: 'left', valign: 'middle',
-      shadow: { type: 'outer', color: '000000', blur: 4, offset: 1, angle: 45 }
-    });
-    
-    // Content area with modern card design
-    contentSlide.addShape('rect', {
-      x: 0.5, y: 1.5, w: 9, h: 4.8,
-      fill: { color: 'FFFFFF' },
-      line: { color: 'E1E8ED', width: 1 },
-      shadow: { type: 'outer', color: '000000', blur: 10, offset: 3, angle: 45, transparency: 20 }
-    });
-    
-    // Content processing with visual elements
-    const contentText = slide.detailedContent || slide.content || '내용이 여기에 표시됩니다.';
-    const contentLines = contentText.split('\n').filter(line => line.trim());
-    
-    // Add content with icons and formatting
-    let yPos = 1.8;
-    for (let lineIndex = 0; lineIndex < contentLines.length; lineIndex++) {
-      const line = contentLines[lineIndex];
+      });
       
-      if (line.includes('•') || line.includes('-')) {
-        // Bullet point with custom icon
-        contentSlide.addShape('circle', {
-          x: 0.8, y: yPos + 0.05, w: 0.15, h: 0.15,
-          fill: { color: '3498DB' },
-          line: { width: 0 }
+      // Slide number with modern badge
+      contentSlide.addShape('circle', {
+        x: 9.2, y: 0.15, w: 0.6, h: 0.6,
+        fill: { color: 'E74C3C' },
+        line: { color: 'C0392B', width: 2 }
+      });
+      
+      contentSlide.addText(`${slide.slideNumber}`, {
+        x: 9.2, y: 0.15, w: 0.6, h: 0.6,
+        fontSize: 16, bold: true, color: 'FFFFFF',
+        align: 'center', valign: 'middle'
+      });
+      
+      // Main title with icon area
+      contentSlide.addShape('rect', {
+        x: 0.5, y: 0.2, w: 8.5, h: 0.8,
+        fill: { color: 'FFFFFF', transparency: 95 },
+        line: { width: 0 }
+      });
+      
+      // Icon placeholder (solar panel icon representation)
+      contentSlide.addShape('rect', {
+        x: 0.7, y: 0.3, w: 0.6, h: 0.6,
+        fill: { color: 'F39C12' },
+        line: { color: 'E67E22', width: 2 }
+      });
+      
+      contentSlide.addText('☀', {
+        x: 0.7, y: 0.3, w: 0.6, h: 0.6,
+        fontSize: 24, color: 'FFFFFF', align: 'center', valign: 'middle'
+      });
+      
+      // Title text
+      contentSlide.addText(slide.title || `슬라이드 ${i + 1}`, {
+        x: 1.5, y: 0.3, w: 7.3, h: 0.6,
+        fontSize: 26, bold: true, color: 'FFFFFF',
+        align: 'left', valign: 'middle',
+        shadow: { type: 'outer', color: '000000', blur: 4, offset: 1, angle: 45 }
+      });
+      
+      // Content area with modern card design
+      contentSlide.addShape('rect', {
+        x: 0.5, y: 1.5, w: 9, h: 4.8,
+        fill: { color: 'FFFFFF' },
+        line: { color: 'E1E8ED', width: 1 },
+        shadow: { type: 'outer', color: '000000', blur: 10, offset: 3, angle: 45, transparency: 20 }
+      });
+      
+      // Content processing with visual elements
+      const contentText = slide.detailedContent || slide.content || '내용이 여기에 표시됩니다.';
+      const contentLines = contentText.split('\n').filter(line => line.trim());
+      
+      // Add content with icons and formatting
+      let yPos = 1.8;
+      for (let lineIndex = 0; lineIndex < contentLines.length; lineIndex++) {
+        const line = contentLines[lineIndex];
+        
+        if (line.includes('•') || line.includes('-')) {
+          // Bullet point with custom icon
+          contentSlide.addShape('circle', {
+            x: 0.8, y: yPos + 0.05, w: 0.15, h: 0.15,
+            fill: { color: '3498DB' },
+            line: { width: 0 }
+          });
+          
+          contentSlide.addText(line.replace(/^[•\-]\s*/, ''), {
+            x: 1.1, y: yPos, w: 7.8, h: 0.25,
+            fontSize: 14, color: '2C3E50', align: 'left'
+          });
+        } else {
+          // Regular text with emphasis
+          contentSlide.addText(line, {
+            x: 0.8, y: yPos, w: 8.1, h: 0.3,
+            fontSize: line.length > 50 ? 12 : 14,
+            color: '34495E', align: 'left',
+            bold: lineIndex === 0 // First line bold
+          });
+        }
+        yPos += 0.35;
+        
+        if (yPos > 5.8) break; // Prevent overflow
+      }
+      
+      // Add data visualization if content contains numbers
+      if (contentText.match(/\d+%|\d+억|\d+만|성장|증가|효율/)) {
+        // Simple chart representation
+        contentSlide.addShape('rect', {
+          x: 6.5, y: 4, w: 2.8, h: 1.8,
+          fill: { color: 'ECF0F1' },
+          line: { color: 'BDC3C7', width: 1 }
         });
         
-        contentSlide.addText(line.replace(/^[•\-]\s*/, ''), {
-          x: 1.1, y: yPos, w: 7.8, h: 0.25,
-          fontSize: 14, color: '2C3E50', align: 'left'
+        // Chart bars
+        [0.3, 0.6, 0.9, 0.7].forEach((height, i) => {
+          contentSlide.addShape('rect', {
+            x: 6.8 + (i * 0.5), y: 5.8 - (height * 1.3), w: 0.3, h: height * 1.3,
+            fill: { color: i === 2 ? 'E74C3C' : '3498DB' },
+            line: { width: 0 }
+          });
         });
-      } else {
-        // Regular text with emphasis
-        contentSlide.addText(line, {
-          x: 0.8, y: yPos, w: 8.1, h: 0.3,
-          fontSize: line.length > 50 ? 12 : 14,
-          color: '34495E', align: 'left',
-          bold: lineIndex === 0 // First line bold
+        
+        contentSlide.addText('성과 지표', {
+          x: 6.5, y: 4.1, w: 2.8, h: 0.3,
+          fontSize: 10, bold: true, color: '7F8C8D', align: 'center'
         });
       }
-      yPos += 0.35;
       
-      if (yPos > 5.8) break; // Prevent overflow
-    }
-    
-    // Add data visualization if content contains numbers
-    if (contentText.match(/\d+%|\d+억|\d+만|성장|증가|효율/)) {
-      // Simple chart representation
+      // Footer with modern design
       contentSlide.addShape('rect', {
-        x: 6.5, y: 4, w: 2.8, h: 1.8,
-        fill: { color: 'ECF0F1' },
-        line: { color: 'BDC3C7', width: 1 }
+        x: 0, y: 6.8, w: 10, h: 0.7,
+        fill: { color: '34495E' },
+        line: { width: 0 }
       });
       
-      // Chart bars
-      [0.3, 0.6, 0.9, 0.7].forEach((height, i) => {
-        contentSlide.addShape('rect', {
-          x: 6.8 + (i * 0.5), y: 5.8 - (height * 1.3), w: 0.3, h: height * 1.3,
-          fill: { color: i === 2 ? 'E74C3C' : '3498DB' },
-          line: { width: 0 }
-        });
+      // Company logo area
+      contentSlide.addShape('rect', {
+        x: 8.5, y: 6.9, w: 1.3, h: 0.5,
+        fill: { color: '3498DB' },
+        line: { width: 0 }
       });
       
-      contentSlide.addText('성과 지표', {
-        x: 6.5, y: 4.1, w: 2.8, h: 0.3,
-        fontSize: 10, bold: true, color: '7F8C8D', align: 'center'
+      contentSlide.addText('해피솔라', {
+        x: 8.5, y: 6.9, w: 1.3, h: 0.5,
+        fontSize: 12, bold: true, color: 'FFFFFF',
+        align: 'center', valign: 'middle'
+      });
+      
+      // Footer text with modern spacing
+      contentSlide.addText(`주식회사 해피솔라 - AI 문서 생성 시스템`, {
+        x: 0.5, y: 6.9, w: 7.5, h: 0.5,
+        fontSize: 10, color: 'BDC3C7', align: 'left', valign: 'middle'
+      });
+      
+      contentSlide.addText(`${slide.slideNumber} / ${slides.length}`, {
+        x: 7.5, y: 6.9, w: 0.8, h: 0.5,
+        fontSize: 10, color: 'BDC3C7', align: 'right', valign: 'middle'
       });
     }
-    
-    // Footer with modern design
-    contentSlide.addShape('rect', {
-      x: 0, y: 6.8, w: 10, h: 0.7,
-      fill: { color: '34495E' },
-      line: { width: 0 }
-    });
-    
-    // Company logo area
-    contentSlide.addShape('rect', {
-      x: 8.5, y: 6.9, w: 1.3, h: 0.5,
-      fill: { color: '3498DB' },
-      line: { width: 0 }
-    });
-    
-    contentSlide.addText('해피솔라', {
-      x: 8.5, y: 6.9, w: 1.3, h: 0.5,
-      fontSize: 12, bold: true, color: 'FFFFFF',
-      align: 'center', valign: 'middle'
-    });
-    
-    // Footer text with modern spacing
-    contentSlide.addText(`주식회사 해피솔라 - AI 문서 생성 시스템`, {
-      x: 0.5, y: 6.9, w: 7.5, h: 0.5,
-      fontSize: 10, color: 'BDC3C7', align: 'left', valign: 'middle'
-    });
-    
-    contentSlide.addText(`${slide.slideNumber} / ${slides.length}`, {
-      x: 7.5, y: 6.9, w: 0.8, h: 0.5,
-      fontSize: 10, color: 'BDC3C7', align: 'right', valign: 'middle'
-    });
-  });
+  }
 
   // Generate and return the PPTX file as buffer
   const output = await pptx.write({ outputType: 'arraybuffer' });
