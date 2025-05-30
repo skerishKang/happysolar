@@ -277,24 +277,45 @@ export default function DocumentGenerator({ featureId, companyInfo, onClose }: D
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Validate required fields
-    const requiredFields = template.fields.filter(field => field.required);
-    const missingFields = requiredFields.filter((field, index) => 
-      !formData[`field_${index}`] || formData[`field_${index}`] === ''
-    );
+    // 자동 기본값 설정
+    const autoFilledFormData = { ...formData };
 
-    if (missingFields.length > 0) {
-      toast({
-        title: "필수 항목 누락",
-        description: "모든 필수 항목을 입력해주세요.",
-        variant: "destructive",
-      });
-      return;
+    // 프레젠테이션 필수 필드 자동 완성
+    if (featureId === 'presentation') {
+      if (!autoFilledFormData.field_3) autoFilledFormData.field_3 = '팜솔라';
+      if (!autoFilledFormData.field_4) autoFilledFormData.field_4 = '신규 사업 제안서';
+      if (!autoFilledFormData.field_5) autoFilledFormData.field_5 = '팜솔라';
+      if (!autoFilledFormData.field_6) autoFilledFormData.field_6 = '10분 (간단 소개)';
+      if (!autoFilledFormData.field_7) autoFilledFormData.field_7 = '5';
+      if (!autoFilledFormData.field_8) autoFilledFormData.field_8 = '팜솔라';
+      if (!autoFilledFormData.field_9) autoFilledFormData.field_9 = '전문적/비즈니스';
+    }
+
+    // 이메일 필수 필드 자동 완성
+    if (featureId === 'email') {
+      if (!autoFilledFormData.field_2) autoFilledFormData.field_2 = '견적서 발송';
+      if (!autoFilledFormData.field_3) autoFilledFormData.field_3 = '고객';
+      if (!autoFilledFormData.field_6) autoFilledFormData.field_6 = '팜솔라 사업 제안서';
+    }
+
+    // 계약서 필수 필드 자동 완성
+    if (featureId === 'contract') {
+      if (!autoFilledFormData.field_1) autoFilledFormData.field_1 = '태양광 발전시설 공급계약';
+      if (!autoFilledFormData.field_2) autoFilledFormData.field_2 = '고객사';
+      if (!autoFilledFormData.field_3) autoFilledFormData.field_3 = '1억원';
+    }
+
+    // 견적서 필수 필드 자동 완성
+    if (featureId === 'quotation') {
+      if (!autoFilledFormData.field_1) autoFilledFormData.field_1 = '고객사';
+      if (!autoFilledFormData.field_2) autoFilledFormData.field_2 = '태양광 발전시설';
+      if (!autoFilledFormData.field_4) autoFilledFormData.field_4 = '100kW';
     }
 
     generateMutation.mutate({
       type: featureId as any,
-      formData
+      formData: autoFilledFormData,
+      uploadedFiles
     });
   };
 
@@ -526,7 +547,7 @@ export default function DocumentGenerator({ featureId, companyInfo, onClose }: D
                           onDrop={(e) => handleDrop(e, index)}
                           onClick={() => {
                             const fileInput = document.getElementById(`file-input-${index}`) as HTMLInputElement;
-                            if (fileInput) {
+if (fileInput) {
                               fileInput.click();
                             }
                           }}

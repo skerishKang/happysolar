@@ -361,8 +361,80 @@ JSON 형식으로 전문적인 계약서를 생성해주세요:
 }${fileContent}`;
 
     case 'presentation':
-      const slideCount = formData.field_3 || 10;
-      const title = formData.field_0 || '프레젠테이션';
+      const slideCount = formData.field_7 || 5;
+      const presentationTitle = formData.field_4 || formData.field_3 || formData.field_5 || '팜솔라 사업 제안서';
+      const presenter = formData.field_5 || formData.field_3 || formData.field_8 || '팜솔라';
+      const duration = formData.field_6 || '10분';
+      const style = formData.field_9 || '전문적/비즈니스';
+      const audience = formData.field_2?.audience || '비즈니스 파트너';
+      
+      // 업로드된 파일에서 자동으로 정보 추출
+      let extractedInfo = '';
+      if (uploadedFiles && uploadedFiles.length > 0) {
+        extractedInfo = '\n\n업로드된 참고 자료:\n';
+        uploadedFiles.forEach(file => {
+          extractedInfo += `- ${file.originalName}: ${file.content.substring(0, 500)}...\n`;
+        });
+      }
+
+      return `팜솔라그룹(해피솔라)의 전문적인 ${presentationTitle} 프레젠테이션을 ${slideCount}개 슬라이드로 제작해주세요.
+
+프레젠테이션 정보:
+- 제목: ${presentationTitle}
+- 발표자: ${presenter} 
+- 발표 시간: ${duration}
+- 스타일: ${style}
+- 대상: ${audience}
+- 회사: ${companyInfo.name} (${companyInfo.businessType})
+
+회사 정보:
+- 회사명: ${companyInfo.name}
+- 사업영역: ${companyInfo.businessType}
+- 대표자: ${companyInfo.representative}
+- 소재지: ${companyInfo.address}
+- 사업자등록번호: ${companyInfo.businessNumber}
+
+${extractedInfo}
+
+다음과 같은 구조로 전문적이고 임팩트 있는 프레젠테이션을 만들어주세요:
+
+1. 표지 슬라이드: 회사 소개 및 프레젠테이션 제목
+2. 회사 개요: 팜솔라그룹 소개 및 핵심 역량
+3. 사업 현황: 주요 실적 및 성과
+4. 제안 내용: 구체적인 사업 제안 또는 솔루션
+5. 기술적 우위: 차별화된 기술력 및 경쟁력
+6. 기대 효과: 예상 성과 및 ROI
+7. 실행 계획: 단계별 추진 방안
+8. 맺음말: 요약 및 제안
+
+각 슬라이드는 다음을 포함해야 합니다:
+- 명확하고 임팩트 있는 제목
+- 핵심 메시지 3-5개
+- 구체적인 데이터나 사례 (가능한 경우)
+- 다음 슬라이드로의 자연스러운 연결
+
+JSON 형식으로 응답해주세요:
+{
+  "title": "${presentationTitle}",
+  "content": {
+    "slideStructure": [
+      {
+        "title": "슬라이드 제목",
+        "content": "핵심 메시지",
+        "detailedContent": "상세 내용 (3-5개 포인트, 각각 구체적이고 실질적인 내용)"
+      }
+    ],
+    "presentationInfo": {
+      "totalSlides": ${slideCount},
+      "duration": "${duration}",
+      "presenter": "${presenter}",
+      "audience": "${audience}",
+      "style": "${style}"
+    }
+  }
+}${fileContent}`;
+
+    case 'email':Data.field_0 || '프레젠테이션';
       const purpose = formData.field_1 || '사업 제안';
       const audience = formData.field_2 || '고객';
 

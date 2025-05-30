@@ -7,14 +7,13 @@ async function generatePDFContent(document: Document): Promise<Buffer> {
   try {
     console.log('Starting PDF generation for document:', document.id);
     
-    const puppeteer = await import('puppeteer-core');
-    const chromium = await import('@sparticuz/chromium');
-    
+    // 간단한 HTML to PDF 생성 (Puppeteer 대신)
     let slides: any[] = [];
     let requestedSlideCount = 5;
 
-    if (document.formData && document.formData.field_3 && !isNaN(Number(document.formData.field_3))) {
-      requestedSlideCount = Number(document.formData.field_3);
+    // 슬라이드 수 확인
+    if (document.formData && document.formData.field_7 && !isNaN(Number(document.formData.field_7))) {
+      requestedSlideCount = Number(document.formData.field_7);
     }
 
     if (document.content && typeof document.content === 'object' && document.content.slideStructure && Array.isArray(document.content.slideStructure)) {
@@ -30,144 +29,42 @@ async function generatePDFContent(document: Document): Promise<Buffer> {
       }
     }
 
-    // HTML 콘텐츠 생성
-    let htmlContent = `
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8">
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;700&display=swap');
-        
-        body {
-            font-family: 'Noto Sans KR', sans-serif;
-            margin: 0;
-            padding: 20px;
-            color: #333;
-            line-height: 1.6;
-        }
-        
-        .cover-page {
-            text-align: center;
-            padding: 100px 0;
-            page-break-after: always;
-            border-bottom: 3px solid #1e3c72;
-        }
-        
-        .title {
-            font-size: 2.5em;
-            font-weight: 700;
-            color: #1e3c72;
-            margin-bottom: 30px;
-        }
-        
-        .company {
-            font-size: 1.5em;
-            color: #f39c12;
-            margin-bottom: 20px;
-        }
-        
-        .date {
-            font-size: 1.1em;
-            color: #666;
-        }
-        
-        .slide-page {
-            margin-bottom: 50px;
-            page-break-before: always;
-            padding: 20px 0;
-        }
-        
-        .slide-header {
-            background: linear-gradient(135deg, #3498db, #1e3c72);
-            color: white;
-            padding: 15px 20px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-        }
-        
-        .slide-number {
-            background: #e74c3c;
-            color: white;
-            width: 30px;
-            height: 30px;
-            border-radius: 50%;
-            display: inline-block;
-            text-align: center;
-            line-height: 30px;
-            font-weight: bold;
-            float: right;
-            margin-top: -5px;
-        }
-        
-        .slide-title {
-            font-size: 1.8em;
-            font-weight: 700;
-            margin: 0;
-        }
-        
-        .slide-content {
-            padding: 20px;
-            background: #f8f9fa;
-            border-left: 4px solid #3498db;
-            margin-bottom: 20px;
-        }
-        
-        .footer {
-            position: fixed;
-            bottom: 20px;
-            left: 0;
-            right: 0;
-            text-align: center;
-            font-size: 0.9em;
-            color: #666;
-            border-top: 1px solid #ddd;
-            padding-top: 10px;
-        }
-        
-        pre {
-            white-space: pre-wrap;
-            word-wrap: break-word;
-        }
-    </style>
-</head>
-<body>
-    <div class="cover-page">
-        <h1 class="title">${document.title || '프레젠테이션'}</h1>
-        <div class="company">주식회사 해피솔라</div>
-        <div class="date">${new Date().toLocaleDateString('ko-KR')}</div>
-        <div style="margin-top: 30px; color: #666;">총 ${slides.length}개 슬라이드</div>
-    </div>`;
+    // 간단한 텍스트 기반 PDF 내용 생성
+    let pdfContent = `
+═══════════════════════════════════════════════════════════════
+                    ${document.title || '프레젠테이션'}
+                        주식회사 해피솔라
+                    ${new Date().toLocaleDateString('ko-KR')}
+═══════════════════════════════════════════════════════════════
 
-    // 각 슬라이드 추가
+총 ${slides.length}개 슬라이드
+
+`;
+
+    // 각 슬라이드 내용 추가
     slides.forEach((slide: any, index: number) => {
       const content = slide.detailedContent || slide.content || slide.description || '';
-      htmlContent += `
-    <div class="slide-page">
-        <div class="slide-header">
-            <span class="slide-number">${index + 1}</span>
-            <h2 class="slide-title">${slide.title || `슬라이드 ${index + 1}`}</h2>
-        </div>
-        <div class="slide-content">
-            <pre>${content}</pre>
-        </div>
-    </div>`;
+      pdfContent += `
+───────────────────────────────────────────────────────────────
+                        슬라이드 ${index + 1}
+                    ${slide.title || `슬라이드 ${index + 1}`}
+───────────────────────────────────────────────────────────────
+
+${content}
+
+
+`;
     });
 
-    htmlContent += `
-    <div class="footer">
-        주식회사 해피솔라 - AI 문서 생성 시스템 | 문서 ID: ${document.id} | 생성 시간: ${new Date().toLocaleString('ko-KR')}
-    </div>
-</body>
-</html>`;
+    pdfContent += `
+═══════════════════════════════════════════════════════════════
+주식회사 해피솔라 - AI 문서 생성 시스템
+문서 ID: ${document.id} | 생성 시간: ${new Date().toLocaleString('ko-KR')}
+═══════════════════════════════════════════════════════════════
+`;
 
-    // Puppeteer로 PDF 생성
-    const browser = await puppeteer.launch({
-      args: chromium.args,
-      defaultViewport: chromium.defaultViewport,
-      executablePath: await chromium.executablePath(),
-      headless: chromium.headless,
-    });
+    // 텍스트를 UTF-8 버퍼로 변환
+    return Buffer.from(pdfContent, 'utf8');
     
     const page = await browser.newPage();
     await page.setContent(htmlContent, { waitUntil: 'networkidle0' });
