@@ -116,13 +116,13 @@ async function generatePPTXContent(document: Document): Promise<Buffer> {
       const contentSlide = pptx.addSlide();
 
       // 헤더 배경
-      contentSlide.addShape(pptx.ShapeType.rect, {
+      contentSlide.addShape('rect', {
         x: 0, y: 0, w: 10, h: 1.5,
         fill: { color: '3498DB' }
       });
 
       // 슬라이드 번호
-      contentSlide.addShape(pptx.ShapeType.oval, {
+      contentSlide.addShape('ellipse', {
         x: 8.5, y: 0.25, w: 1, h: 1,
         fill: { color: 'E74C3C' }
       });
@@ -148,7 +148,7 @@ async function generatePPTXContent(document: Document): Promise<Buffer> {
       });
 
       // 푸터
-      contentSlide.addShape(pptx.ShapeType.rect, {
+      contentSlide.addShape('rect', {
         x: 0, y: 7, w: 10, h: 0.5,
         fill: { color: '34495E' }
       });
