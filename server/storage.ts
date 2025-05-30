@@ -1,11 +1,95 @@
 import { eq } from "drizzle-orm";
 import { db } from "./db";
 import { users, documents, company, type User, type Document, type Company, type InsertDocument } from "@shared/schema";
-// PDF generation using Puppeteer with Korean font support
+
+// SVG-based slide generation for better quality and compatibility
+async function generateSVGSlide(slideData: any, slideNumber: number, totalSlides: number): Promise<string> {
+  const svgContent = `
+    <svg width="1920" height="1080" viewBox="0 0 1920 1080" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" style="stop-color:#1e3c72;stop-opacity:1" />
+          <stop offset="100%" style="stop-color:#2a5298;stop-opacity:1" />
+        </linearGradient>
+        <linearGradient id="headerGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" style="stop-color:#3498DB;stop-opacity:1" />
+          <stop offset="100%" style="stop-color:#2980B9;stop-opacity:1" />
+        </linearGradient>
+        <filter id="shadow" x="-50%" y="-50%" width="200%" height="200%">
+          <feDropShadow dx="4" dy="4" stdDeviation="8" flood-color="rgba(0,0,0,0.3)"/>
+        </filter>
+      </defs>
+      
+      <!-- Background -->
+      <rect width="1920" height="1080" fill="url(#bgGradient)"/>
+      
+      <!-- Decorative elements -->
+      <circle cx="1750" cy="150" r="100" fill="rgba(255,255,255,0.1)"/>
+      <polygon points="100,950 200,850 200,1050" fill="rgba(255,255,255,0.08)"/>
+      
+      <!-- Header bar -->
+      <rect x="0" y="0" width="1920" height="200" fill="url(#headerGradient)"/>
+      
+      <!-- Slide number badge -->
+      <circle cx="1750" cy="100" r="50" fill="#E74C3C" stroke="#C0392B" stroke-width="4"/>
+      <text x="1750" y="110" text-anchor="middle" fill="white" font-family="Arial, sans-serif" font-size="28" font-weight="bold">${slideNumber}</text>
+      
+      <!-- Solar icon -->
+      <circle cx="150" cy="100" r="60" fill="#F39C12" stroke="#E67E22" stroke-width="4"/>
+      <text x="150" y="120" text-anchor="middle" fill="white" font-family="Arial, sans-serif" font-size="48">☀</text>
+      
+      <!-- Title -->
+      <text x="250" y="120" fill="white" font-family="Arial, sans-serif" font-size="48" font-weight="bold" filter="url(#shadow)">
+        ${slideData.title || `슬라이드 ${slideNumber}`}
+      </text>
+      
+      <!-- Content area -->
+      <rect x="100" y="250" width="1720" height="750" fill="white" rx="20" filter="url(#shadow)"/>
+      
+      <!-- Content text -->
+      <foreignObject x="150" y="300" width="1620" height="650">
+        <div xmlns="http://www.w3.org/1999/xhtml" style="font-family: 'Malgun Gothic', Arial, sans-serif; padding: 40px; line-height: 1.8; color: #2C3E50;">
+          ${(slideData.detailedContent || slideData.content || '').split('\n').map((line: string, index: number) => {
+            if (line.includes('•') || line.includes('-')) {
+              return `<div style="margin: 15px 0; display: flex; align-items: flex-start;">
+                <span style="color: #3498DB; font-weight: bold; margin-right: 15px; font-size: 18px;">●</span>
+                <span style="font-size: 24px;">${line.replace(/^[•\-]\s*/, '')}</span>
+              </div>`;
+            } else if (line.trim()) {
+              return `<div style="margin: 20px 0; font-size: ${index === 0 ? '28px' : '24px'}; ${index === 0 ? 'font-weight: bold; color: #2C3E50;' : 'color: #34495E;'}">${line}</div>`;
+            }
+            return '';
+          }).join('')}
+        </div>
+      </foreignObject>
+      
+      <!-- Data visualization area (if content contains numbers) -->
+      ${slideData.detailedContent && slideData.detailedContent.match(/\d+%|\d+억|\d+만|성장|증가|효율/) ? `
+        <rect x="1300" y="700" width="450" height="250" fill="#ECF0F1" stroke="#BDC3C7" rx="10"/>
+        <text x="1525" y="730" text-anchor="middle" fill="#7F8C8D" font-family="Arial, sans-serif" font-size="18" font-weight="bold">성과 지표</text>
+        <rect x="1350" y="760" width="60" height="120" fill="#3498DB"/>
+        <rect x="1430" y="740" width="60" height="140" fill="#3498DB"/>
+        <rect x="1510" y="720" width="60" height="160" fill="#E74C3C"/>
+        <rect x="1590" y="750" width="60" height="130" fill="#3498DB"/>
+      ` : ''}
+      
+      <!-- Footer -->
+      <rect x="0" y="1000" width="1920" height="80" fill="#34495E"/>
+      <rect x="1500" y="1010" width="300" height="60" fill="#3498DB"/>
+      <text x="1650" y="1050" text-anchor="middle" fill="white" font-family="Arial, sans-serif" font-size="24" font-weight="bold">해피솔라</text>
+      <text x="100" y="1050" fill="#BDC3C7" font-family="Arial, sans-serif" font-size="18">주식회사 해피솔라 - AI 문서 생성 시스템</text>
+      <text x="1400" y="1050" fill="#BDC3C7" font-family="Arial, sans-serif" font-size="18">${slideNumber} / ${totalSlides}</text>
+    </svg>
+  `;
+  
+  return svgContent;
+}
+
+// Enhanced PDF generation without Puppeteer dependency issues
 async function generatePDFContent(document: Document): Promise<Buffer> {
   try {
-    const puppeteer = (await import('puppeteer-core')).default;
-    const chromium = (await import('@sparticuz/chromium')).default;
+    // Try using node-html-to-image as fallback for better compatibility
+    const nodeHtmlToImage = (await import('node-html-to-image')).default;
 
     // Extract content from document
     let contentText = '';
@@ -27,16 +111,21 @@ async function generatePDFContent(document: Document): Promise<Buffer> {
     }
 
     // Create beautiful HTML for PDF
+    // Create beautiful HTML with enhanced Korean font support
     const htmlContent = `
     <!DOCTYPE html>
     <html>
     <head>
       <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
       <style>
-        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;700&family=Malgun+Gothic&display=swap');
+        @font-face {
+          font-family: 'Korean';
+          src: local('Malgun Gothic'), local('맑은 고딕'), local('Apple Gothic'), local('Noto Sans KR');
+        }</old_str>
         
         body {
-          font-family: 'Noto Sans KR', 'Malgun Gothic', '맑은 고딕', 'Apple Gothic', 'Helvetica Neue', Arial, sans-serif;
+          font-family: 'Korean', 'Malgun Gothic', '맑은 고딕', 'Apple Gothic', 'Noto Sans KR', 'Helvetica Neue', Arial, sans-serif;</old_str>
           margin: 0;
           padding: 20px;
           line-height: 1.6;
@@ -230,10 +319,10 @@ async function generatePDFContent(document: Document): Promise<Buffer> {
   }
 }
 
-// Real PPTX generation using pptxgenjs library
+// SVG-based PPTX generation for high-quality vector graphics
 async function generatePPTXContent(document: Document): Promise<Buffer> {
   // Dynamic import for CommonJS module
-  const PptxGenJS = (await import('pptxgenjs')).default;
+  const PptxGenJS = (await import('pptxgenjs')).default;</old_str>
   
   // Create a new presentation
   const pptx = new PptxGenJS();
@@ -309,24 +398,83 @@ async function generatePPTXContent(document: Document): Promise<Buffer> {
     });
   }
 
-  // Add stunning title slide with gradient background and modern design
+  // Add stunning title slide with SVG-based design
   const titleSlide = pptx.addSlide();
   
-  // Gradient background
-  titleSlide.background = {
-    data: 'image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==',
-    path: null
-  };
+  // Generate SVG for title slide
+  const titleSVG = `
+    <svg width="1920" height="1080" viewBox="0 0 1920 1080" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="titleBg" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" style="stop-color:#1e3c72;stop-opacity:1" />
+          <stop offset="100%" style="stop-color:#2a5298;stop-opacity:1" />
+        </linearGradient>
+        <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+          <feGaussianBlur stdDeviation="4" result="coloredBlur"/>
+          <feMerge> 
+            <feMergeNode in="coloredBlur"/>
+            <feMergeNode in="SourceGraphic"/>
+          </feMerge>
+        </filter>
+      </defs>
+      
+      <!-- Background -->
+      <rect width="1920" height="1080" fill="url(#titleBg)"/>
+      
+      <!-- Decorative geometric shapes -->
+      <polygon points="1600,100 1750,100 1675,250" fill="rgba(255,255,255,0.15)" filter="url(#glow)"/>
+      <circle cx="200" cy="900" r="120" fill="rgba(255,255,255,0.1)" filter="url(#glow)"/>
+      
+      <!-- Main title -->
+      <text x="960" y="450" text-anchor="middle" fill="white" font-family="Arial, sans-serif" font-size="72" font-weight="bold" filter="url(#glow)">
+        ${document.title || '프레젠테이션'}
+      </text>
+      
+      <!-- Subtitle -->
+      <text x="960" y="550" text-anchor="middle" fill="#F39C12" font-family="Arial, sans-serif" font-size="36" font-style="italic">
+        AI 기반 스마트 솔루션
+      </text>
+      
+      <!-- Company branding box -->
+      <rect x="660" y="650" width="600" height="150" fill="rgba(255,255,255,0.9)" rx="20" filter="url(#glow)"/>
+      <text x="960" y="710" text-anchor="middle" fill="#2C3E50" font-family="Arial, sans-serif" font-size="42" font-weight="bold">
+        주식회사 해피솔라
+      </text>
+      <text x="960" y="760" text-anchor="middle" fill="#7F8C8D" font-family="Arial, sans-serif" font-size="24">
+        ${new Date().toLocaleDateString('ko-KR')}
+      </text>
+      
+      <!-- Solar energy icons -->
+      <circle cx="600" cy="725" r="40" fill="#F39C12"/>
+      <text x="600" y="740" text-anchor="middle" fill="white" font-family="Arial, sans-serif" font-size="32">☀</text>
+      <circle cx="1320" cy="725" r="40" fill="#F39C12"/>
+      <text x="1320" y="740" text-anchor="middle" fill="white" font-family="Arial, sans-serif" font-size="32">☀</text>
+    </svg>
+  `;
   
-  // Main background with gradient effect
-  titleSlide.addShape('rect', {
-    x: 0, y: 0, w: 10, h: 7.5,
-    fill: { type: 'linear', angle: 45, colors: [
-      { color: '1e3c72', position: 0 },
-      { color: '2a5298', position: 100 }
-    ]},
-    line: { width: 0 }
-  });
+  // Convert SVG to image data and add to slide
+  try {
+    const sharp = await import('sharp');
+    const svgBuffer = Buffer.from(titleSVG, 'utf-8');
+    const pngBuffer = await sharp.default(svgBuffer).png().toBuffer();
+    const base64Image = pngBuffer.toString('base64');
+    
+    titleSlide.addImage({
+      data: `data:image/png;base64,${base64Image}`,
+      x: 0, y: 0, w: 10, h: 7.5
+    });
+  } catch (error) {
+    console.warn('SVG conversion failed, using fallback design:', error);
+    // Fallback to original design
+    titleSlide.addShape('rect', {
+      x: 0, y: 0, w: 10, h: 7.5,
+      fill: { type: 'linear', angle: 45, colors: [
+        { color: '1e3c72', position: 0 },
+        { color: '2a5298', position: 100 }
+      ]},
+      line: { width: 0 }
+    });
+  }</old_str>
   
   // Decorative geometric shapes
   titleSlide.addShape('triangle', {
@@ -371,22 +519,40 @@ async function generatePPTXContent(document: Document): Promise<Buffer> {
     fontSize: 14, color: 'BDC3C7', align: 'center'
   });
 
-  // Add content slides with advanced design templates
-  slides.forEach((slide, index) => {
+  // Add content slides with SVG-based vector graphics
+  for (let i = 0; i < slides.length; i++) {
+    const slide = slides[i];
     const contentSlide = pptx.addSlide();
     
-    // Modern gradient background
-    contentSlide.background = { color: 'F8FAFC' };
+    // Generate SVG for this slide
+    const slideSVG = await generateSVGSlide(slide, slide.slideNumber, slides.length);
     
-    // Header design with gradient
-    contentSlide.addShape('rect', {
-      x: 0, y: 0, w: 10, h: 1.2,
-      fill: { type: 'linear', angle: 90, colors: [
-        { color: '3498DB', position: 0 },
-        { color: '2980B9', position: 100 }
-      ]},
-      line: { width: 0 }
-    });
+    try {
+      const sharp = await import('sharp');
+      const svgBuffer = Buffer.from(slideSVG, 'utf-8');
+      const pngBuffer = await sharp.default(svgBuffer)
+        .png({ quality: 95 })
+        .resize(1920, 1080)
+        .toBuffer();
+      const base64Image = pngBuffer.toString('base64');
+      
+      contentSlide.addImage({
+        data: `data:image/png;base64,${base64Image}`,
+        x: 0, y: 0, w: 10, h: 7.5
+      });
+    } catch (error) {
+      console.warn('SVG slide conversion failed, using fallback design:', error);
+      // Fallback to original design
+      contentSlide.background = { color: 'F8FAFC' };
+      
+      contentSlide.addShape('rect', {
+        x: 0, y: 0, w: 10, h: 1.2,
+        fill: { type: 'linear', angle: 90, colors: [
+          { color: '3498DB', position: 0 },
+          { color: '2980B9', position: 100 }
+        ]},
+        line: { width: 0 }
+      });</old_str>
     
     // Slide number with modern badge
     contentSlide.addShape('circle', {
