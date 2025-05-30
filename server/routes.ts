@@ -110,14 +110,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (format === 'pdf') {
         const pdfBuffer = await storage.generatePDF(document);
         const sanitizedTitle = (document.title || 'document').replace(/[^a-zA-Z0-9가-힣\s]/g, '').trim();
-        const filename = `${sanitizedTitle}_${new Date().toISOString().split('T')[0]}.pdf`;
+        const filename = `${sanitizedTitle}_${new Date().toISOString().split('T')[0]}.html`;
 
-        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Type', 'text/html; charset=utf-8');
         res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(filename)}"`);
         res.send(pdfBuffer);
       } else if (format === 'pptx') {
         const pptxBuffer = await storage.generatePPTX(document);
-        const filename = `${document.title || 'document'}_${new Date().toISOString().split('T')[0]}.pptx`;
+        const sanitizedTitle = (document.title || 'document').replace(/[^a-zA-Z0-9가-힣\s]/g, '').trim();
+        const filename = `${sanitizedTitle}_${new Date().toISOString().split('T')[0]}.pptx`;
 
         res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.presentationml.presentation');
         res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(filename)}"`);
