@@ -113,9 +113,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
           .replace(/[^a-zA-Z0-9가-힣\s\-_]/g, '')
           .replace(/\s+/g, '_')
           .trim();
-        const filename = `${sanitizedTitle}_${new Date().toISOString().split('T')[0]}.txt`;
+        
+        // Check if it's actual PDF content or fallback text
+        const isActualPDF = pdfBuffer[0] === 0x25 && pdfBuffer[1] === 0x50 && pdfBuffer[2] === 0x44 && pdfBuffer[3] === 0x46; // %PDF
+        
+        let filename, contentType;
+        if (isActualPDF) {
+          filename = `${sanitizedTitle}_${new Date().toISOString().split('T')[0]}.pdf`;
+          contentType = 'application/pdf';
+        } else {
+          filename = `${sanitizedTitle}_${new Date().toISOString().split('T')[0]}.txt`;
+          contentType = 'text/plain; charset=utf-8';
+        }
 
-        res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+        res.setHeader('Content-Type', contentType);
         res.setHeader('Content-Disposition', `attachment; filename*=UTF-8''${encodeURIComponent(filename)}`);
         res.send(pdfBuffer);
       } else if (format === 'pptx') {
