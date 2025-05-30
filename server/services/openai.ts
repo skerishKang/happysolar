@@ -59,29 +59,39 @@ export async function generateDocumentContent(params: DocumentGenerationParams):
   }
 }
 
-function createPromptForDocumentType(type: string, formData: Record<string, any>, companyInfo: any, uploadedFiles: { originalName: string; type: string; content: string; }[]): string {
-  const baseCompanyInfo = `
-회사 정보:
+function createPromptForDocumentType(type: string, formData: Record<string, any>, companyInfo: any, uploadedFiles: any[]): string {
+  console.log('Creating prompt with uploaded files:', uploadedFiles.length);
+
+  let fileContents = '';
+  if (uploadedFiles && uploadedFiles.length > 0) {
+    fileContents = uploadedFiles.map((file, index) => {
+      const contentPreview = file.content.length > 1000 
+        ? file.content.substring(0, 1000) + '...(더 많은 내용 있음)' 
+        : file.content;
+
+      return `=== 업로드된 파일 ${index + 1} ===
+파일명: ${file.originalName}
+파일 유형: ${file.type}
+내용:
+${contentPreview}
+================================`;
+    }).join('\n\n');
+  } else {
+    fileContents = '업로드된 파일이 없습니다.';
+  }
+
+  const basePrompt = `회사 정보:
 - 회사명: ${companyInfo.name}
 - 사업자등록번호: ${companyInfo.businessNumber}
 - 주소: ${companyInfo.address}
 - 업종: ${companyInfo.businessType}
 - 대표자: ${companyInfo.representative}
-`;
 
-  // Add uploaded file content
-  let fileContent = '';
-  if (uploadedFiles.length > 0) {
-    fileContent = `
 업로드된 참고 자료:
-${uploadedFiles.map((file, index) => `
-${index + 1}. ${file.originalName} (${file.type}):
-${file.content}
-`).join('\n')}
+${fileContents}
 
-위 참고 자료의 내용을 반드시 포함하여 문서를 작성해주세요.
-`;
-  }
+사용자 입력 데이터: 
+${JSON.stringify(formData, null, 2)}`;
 
   switch (type) {
     case 'quotation':
@@ -351,50 +361,40 @@ JSON 형식으로 전문적인 계약서를 생성해주세요:
 }${fileContent}`;
 
     case 'presentation':
-      return `${baseCompanyInfo}
+      const slideCount = formData.field_3 || 10;
+      const title = formData.field_0 || '프레젠테이션';
+      const purpose = formData.field_1 || '사업 제안';
+      const audience = formData.field_2 || '고객';
 
-🎨 전문 PPT 생성 (업로드 자료 기반) 🎨
+      return `${basePrompt}
 
-프레젠테이션 정보:
-- 제목: ${formData.field_0 || ''}
-- 발표 대상: ${formData.field_1 || ''}
-- 발표 목적: ${formData.field_2 || ''}
-- 슬라이드 수: ${formData.field_3 || '5장'}
-- 디자인 테마: ${formData.field_4 || '전문적'}
+다음 조건으로 전문적인 프레젠테이션을 생성해주세요:
 
-📁 업로드된 참고 자료:
-${uploadedFiles.map(file => `파일명: ${file.originalName}\n내용: ${file.content}`).join('\n\n')}
+프레젠테이션 요구사항:
+- 제목: ${title}
+- 목적: ${purpose}
+- 대상 청중: ${audience}
+- 슬라이드 수: ${slideCount}개
 
-**핵심 지침:**
-1. 업로드된 파일 내용을 반드시 각 슬라이드에 구체적으로 포함하세요
-2. 실제 데이터, 숫자, 고유 정보를 추출하여 활용하세요  
-3. 각 슬라이드마다 최소 3-5개의 구체적인 포인트를 포함하세요
-4. detailedContent에는 실제 발표 가능한 상세 내용을 작성하세요
+중요 지침:
+1. 업로드된 파일의 내용을 최대한 활용하여 실제 데이터와 정보를 반영하세요
+2. 회사 정보(해피솔라)를 자연스럽게 포함시키세요
+3. 태양광/신재생에너지 사업에 특화된 내용으로 구성하세요
+4. 각 슬라이드는 구체적이고 설득력 있는 내용으로 작성하세요
+5. 업로드된 자료의 데이터, 실적, 사례 등을 적극 활용하세요
 
-JSON 형식으로 ${formData.field_3 || '5'}장의 상세한 프레젠테이션을 생성해주세요:
+응답 형식:
 {
-  "title": "${formData.field_0 || '프레젠테이션'}_${new Date().toLocaleDateString()}",
-  "content": {
-    "documentType": "태양광 사업 프레젠테이션",
-    "slideStructure": [
-      {
-        "slideNumber": 1,
-        "title": "실제 업로드 파일 기반 제목",
-        "content": "업로드 파일에서 추출한 핵심 요약",
-        "detailedContent": "업로드 파일의 구체적 내용을 바탕으로 한 상세 설명 (최소 200자 이상)\n• 구체적 데이터 포인트 1\n• 구체적 데이터 포인트 2\n• 구체적 데이터 포인트 3\n• 실제 수치나 성과\n• 향후 계획이나 목표"
-      }
-    ],
-    "fullText": "모든 슬라이드의 상세 내용을 포함한 완전한 프레젠테이션 스크립트"
-  }
-}
-
-**중요사항:**
-- slideStructure 배열에 정확히 ${formData.field_3 || '5'}개의 슬라이드를 생성하세요
-- 각 슬라이드의 detailedContent는 업로드된 파일의 실제 내용을 기반으로 하세요
-- 일반적인 설명이 아닌 구체적이고 실용적인 내용을 포함하세요
-- 업로드된 파일에 있는 실제 데이터, 수치, 고유 정보를 활용하세요
-
-${fileContent}`;
+  "title": "프레젠테이션 제목",
+  "slideStructure": [
+    {
+      "slideNumber": 1,
+      "title": "슬라이드 제목",
+      "content": "슬라이드 요약 (1-2줄)",
+      "detailedContent": "구체적이고 상세한 내용\n• 핵심 포인트 1\n• 핵심 포인트 2\n• 데이터나 실적 포함"
+    }
+  ]
+}`;
 
     case 'proposal':
       return `${baseCompanyInfo}

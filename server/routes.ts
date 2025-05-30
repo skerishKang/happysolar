@@ -146,12 +146,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
             .trim();
           const filename = `${sanitizedTitle}_${new Date().toISOString().split('T')[0]}.txt`;
 
-          // 텍스트 파일로 제공 (구조화된 문서)
+          // 한글 깨짐 방지를 위해 텍스트 파일로 제공
           res.setHeader('Content-Type', 'text/plain; charset=utf-8');
           res.setHeader('Content-Disposition', `attachment; filename*=UTF-8''${encodeURIComponent(filename)}`);
           res.send(pdfBuffer);
           
-          console.log('PDF (Text) download completed');
+          console.log('PDF (Text format) download completed');
         } catch (pdfError) {
           console.error('PDF generation error:', pdfError);
           return res.status(500).json({ error: 'PDF generation failed' });
