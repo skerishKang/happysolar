@@ -373,20 +373,33 @@ async function generatePPTXContent(document: Document): Promise<Buffer> {
         shadow: { type: 'outer', blur: 5, offset: 2, angle: 45, color: '000000', opacity: 0.1 }
       });
 
-      // 내용을 구조화하여 표시 - content 타입 체크 추가
+      // 내용을 구조화하여 표시 - content 타입 체크 및 안전한 처리
       let content = '';
-      if (typeof slide.detailedContent === 'string') {
-        content = slide.detailedContent;
-      } else if (typeof slide.content === 'string') {
-        content = slide.content;
-      } else if (typeof slide.description === 'string') {
+      if (slide.detailedContent) {
+        if (typeof slide.detailedContent === 'string') {
+          content = slide.detailedContent;
+        } else if (typeof slide.detailedContent === 'object') {
+          // 객체인 경우 문자열로 변환하거나 기본값 사용
+          content = slide.detailedContent.toString ? slide.detailedContent.toString() : JSON.stringify(slide.detailedContent);
+        }
+      } else if (slide.content) {
+        if (typeof slide.content === 'string') {
+          content = slide.content;
+        } else if (typeof slide.content === 'object') {
+          content = slide.content.toString ? slide.content.toString() : JSON.stringify(slide.content);
+        }
+      } else if (slide.description && typeof slide.description === 'string') {
         content = slide.description;
-      } else if (slide.detailedContent && typeof slide.detailedContent === 'object') {
-        content = JSON.stringify(slide.detailedContent);
-      } else if (slide.content && typeof slide.content === 'object') {
-        content = JSON.stringify(slide.content);
       } else {
-        content = `슬라이드 ${index + 1} 내용`;
+        content = `• 팜솔라그룹 ${slide.title || `슬라이드 ${index + 1}`} 관련 내용
+• 태양광 발전 시설의 핵심 기술 및 솔루션
+• 고객 맞춤형 서비스 제공
+• 지속 가능한 에너지 솔루션 구현`;
+      }
+
+      // 문자열이 아닌 경우 강제 변환
+      if (typeof content !== 'string') {
+        content = String(content);
       }
 
       const contentLines = content.split('\n').filter(line => line.trim());

@@ -333,12 +333,19 @@ JSON 형식으로 전문적인 계약서를 생성해주세요:
 }`;
 
     case 'presentation':
-      const slideCount = formData.field_7 || 5;
-      const presentationTitle = formData.field_4 || formData.field_3 || formData.field_5 || '팜솔라 사업 제안서';
-      const presenter = formData.field_5 || formData.field_3 || formData.field_8 || '팜솔라';
-      const duration = formData.field_6 || '10분';
-      const style = formData.field_9 || '전문적/비즈니스';
-      const audience = formData.field_2 || '비즈니스 파트너';
+      // 폼 데이터에서 실제 값 추출 (빈 객체 처리)
+      const extractValue = (field: any) => {
+        if (typeof field === 'string' && field.trim()) return field.trim();
+        if (typeof field === 'object' && field !== null && Object.keys(field).length === 0) return '';
+        return field || '';
+      };
+
+      const slideCount = extractValue(formData.field_7) || 5;
+      const presentationTitle = extractValue(formData.field_4) || extractValue(formData.field_3) || extractValue(formData.field_5) || '팜솔라 태양광 사업 제안서';
+      const presenter = extractValue(formData.field_5) || extractValue(formData.field_3) || extractValue(formData.field_8) || '팜솔라그룹';
+      const duration = extractValue(formData.field_6) || '10분 (간단 소개)';
+      const style = extractValue(formData.field_9) || '전문적/비즈니스';
+      const audience = extractValue(formData.field_2) || '신규 비즈니스 파트너';
       
       // 업로드된 파일에서 자동으로 정보 추출
       let extractedInfo = '';
@@ -349,15 +356,17 @@ JSON 형식으로 전문적인 계약서를 생성해주세요:
         });
       }
 
-      return `팜솔라그룹(해피솔라)의 전문적인 ${presentationTitle} 프레젠테이션을 ${slideCount}개 슬라이드로 제작해주세요.
+      return `팜솔라그룹(해피솔라)의 전문적인 "${presentationTitle}" 프레젠테이션을 정확히 ${slideCount}개 슬라이드로 제작해주세요.
 
-프레젠테이션 정보:
+🎯 프레젠테이션 요구사항:
 - 제목: ${presentationTitle}
 - 발표자: ${presenter} 
 - 발표 시간: ${duration}
 - 스타일: ${style}
 - 대상: ${audience}
 - 회사: ${companyInfo.name} (${companyInfo.businessType})
+
+⚠️ 중요: 각 슬라이드의 detailedContent는 반드시 문자열(string) 형태로 작성해주세요.
 
 회사 정보:
 - 회사명: ${companyInfo.name}
@@ -385,15 +394,15 @@ ${extractedInfo}
 - 구체적인 데이터나 사례 (가능한 경우)
 - 다음 슬라이드로의 자연스러운 연결
 
-JSON 형식으로 응답해주세요:
+⚡ JSON 형식으로 응답해주세요 (모든 content는 반드시 문자열로!):
 {
   "title": "${presentationTitle}",
   "content": {
     "slideStructure": [
       {
-        "title": "슬라이드 제목",
-        "content": "핵심 메시지",
-        "detailedContent": "상세 내용 (3-5개 포인트, 각각 구체적이고 실질적인 내용)"
+        "title": "슬라이드 제목 (문자열)",
+        "content": "핵심 메시지 (문자열)",
+        "detailedContent": "상세 내용을 문자열로 작성. 각 포인트는 줄바꿈(\\n)으로 구분. 예: • 첫 번째 내용\\n• 두 번째 내용\\n• 세 번째 내용"
       }
     ],
     "presentationInfo": {
@@ -402,6 +411,11 @@ JSON 형식으로 응답해주세요:
       "presenter": "${presenter}",
       "audience": "${audience}",
       "style": "${style}"
+    },
+    "requirements": {
+      "stringTypeOnly": "모든 content와 detailedContent는 반드시 string 타입이어야 합니다",
+      "lineBreaks": "여러 항목은 \\n으로 구분하세요",
+      "bulletPoints": "• 기호를 사용하여 포인트를 구분하세요"
     }
   }
 }`;

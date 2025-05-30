@@ -312,9 +312,20 @@ export default function DocumentGenerator({ featureId, companyInfo, onClose }: D
       if (!autoFilledFormData.field_4) autoFilledFormData.field_4 = '100kW';
     }
 
+    // 빈 객체를 빈 문자열로 변환
+    const cleanedFormData = Object.keys(autoFilledFormData).reduce((acc, key) => {
+      const value = autoFilledFormData[key];
+      if (typeof value === 'object' && value !== null && Object.keys(value).length === 0) {
+        acc[key] = '';
+      } else {
+        acc[key] = value;
+      }
+      return acc;
+    }, {} as any);
+
     generateMutation.mutate({
       type: featureId as any,
-      formData: autoFilledFormData,
+      formData: cleanedFormData,
       uploadedFiles
     });
   };
