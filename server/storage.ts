@@ -7,7 +7,23 @@ async function generatePDFContent(document: Document): Promise<Buffer> {
   try {
     console.log('Starting PDF generation for document:', document.id);
     
-    // 간단한 HTML to PDF 생성 (Puppeteer 대신)
+    const puppeteer = (await import('puppeteer')).default;
+    
+    // Puppeteer 브라우저 시작
+    const browser = await puppeteer.launch({
+      headless: true,
+      args: [
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+        '--disable-dev-shm-usage',
+        '--disable-accelerated-2d-canvas',
+        '--no-first-run',
+        '--no-zygote',
+        '--single-process',
+        '--disable-gpu'
+      ]
+    });
+
     let slides: any[] = [];
     let requestedSlideCount = 5;
 
@@ -18,6 +34,13 @@ async function generatePDFContent(document: Document): Promise<Buffer> {
 
     if (document.content && typeof document.content === 'object' && document.content.slideStructure && Array.isArray(document.content.slideStructure)) {
       slides = document.content.slideStructure.slice(0, requestedSlideCount);
+    } else if (document.content && typeof document.content === 'object' && document.content.fullText) {
+      // 다른 문서 타입의 경우 fullText 사용
+      slides = [{
+        title: document.title || '문서',
+        content: document.content.fullText || '내용이 없습니다.',
+        detailedContent: document.content.fullText || '내용이 없습니다.'
+      }];
     } else {
       // 기본 슬라이드 구조
       for (let i = 0; i < requestedSlideCount; i++) {
@@ -29,43 +52,147 @@ async function generatePDFContent(document: Document): Promise<Buffer> {
       }
     }
 
-    // 간단한 텍스트 기반 PDF 내용 생성
-    let pdfContent = `
-═══════════════════════════════════════════════════════════════
-                    ${document.title || '프레젠테이션'}
-                        주식회사 해피솔라
-                    ${new Date().toLocaleDateString('ko-KR')}
-═══════════════════════════════════════════════════════════════
-
-총 ${slides.length}개 슬라이드
-
-`;
-
-    // 각 슬라이드 내용 추가
-    slides.forEach((slide: any, index: number) => {
-      const content = slide.detailedContent || slide.content || slide.description || '';
-      pdfContent += `
-───────────────────────────────────────────────────────────────
-                        슬라이드 ${index + 1}
-                    ${slide.title || `슬라이드 ${index + 1}`}
-───────────────────────────────────────────────────────────────
-
-${content}
-
-
-`;
-    });
-
-    pdfContent += `
-═══════════════════════════════════════════════════════════════
-주식회사 해피솔라 - AI 문서 생성 시스템
-문서 ID: ${document.id} | 생성 시간: ${new Date().toLocaleString('ko-KR')}
-═══════════════════════════════════════════════════════════════
-`;
-
-    // 텍스트를 UTF-8 버퍼로 변환
-    return Buffer.from(pdfContent, 'utf8');
+    // HTML 내용 생성
+    const htmlContent = `
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${document.title || '문서'}</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap');
     
+    body {
+      font-family: 'Noto Sans KR', sans-serif;
+      margin: 0;
+      padding: 20px;
+      background: #fff;
+      color: #333;
+      line-height: 1.6;
+    }
+    
+    .header {
+      text-align: center;
+      margin-bottom: 40px;
+      padding: 30px 0;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border-radius: 10px;
+    }
+    
+    .header h1 {
+      font-size: 36px;
+      font-weight: 700;
+      margin: 0 0 10px 0;
+    }
+    
+    .header .company {
+      font-size: 20px;
+      font-weight: 500;
+      opacity: 0.9;
+    }
+    
+    .header .date {
+      font-size: 16px;
+      opacity: 0.8;
+      margin-top: 10px;
+    }
+    
+    .slide {
+      margin: 40px 0;
+      page-break-inside: avoid;
+      border: 1px solid #e1e5e9;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    
+    .slide-header {
+      background: linear-gradient(45deg, #FF6B35, #F7931E);
+      color: white;
+      padding: 20px;
+      font-size: 24px;
+      font-weight: 600;
+    }
+    
+    .slide-content {
+      padding: 30px;
+      background: white;
+    }
+    
+    .slide-content p {
+      margin: 15px 0;
+      font-size: 16px;
+    }
+    
+    .slide-content ul {
+      margin: 20px 0;
+      padding-left: 20px;
+    }
+    
+    .slide-content li {
+      margin: 10px 0;
+      font-size: 16px;
+    }
+    
+    .footer {
+      text-align: center;
+      margin-top: 50px;
+      padding: 20px;
+      background: #f8f9fa;
+      border-radius: 8px;
+      color: #666;
+    }
+    
+    .page-break {
+      page-break-before: always;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>${document.title || '문서'}</h1>
+    <div class="company">주식회사 해피솔라</div>
+    <div class="date">${new Date().toLocaleDateString('ko-KR')}</div>
+  </div>
+
+  ${slides.map((slide: any, index: number) => {
+    const content = slide.detailedContent || slide.content || slide.description || '';
+    const formattedContent = content
+      .split('\n')
+      .map((line: string) => {
+        if (line.trim().startsWith('•') || line.trim().startsWith('-')) {
+          return `<li>${line.replace(/^[•\-]\s*/, '')}</li>`;
+        }
+        return line.trim() ? `<p>${line}</p>` : '';
+      })
+      .join('');
+
+    const hasListItems = formattedContent.includes('<li>');
+    const finalContent = hasListItems 
+      ? formattedContent.replace(/(<li>.*<\/li>)/g, '<ul>$1</ul>').replace(/<\/ul><ul>/g, '')
+      : formattedContent;
+
+    return `
+      <div class="slide ${index > 0 ? 'page-break' : ''}">
+        <div class="slide-header">
+          ${slide.title || `슬라이드 ${index + 1}`}
+        </div>
+        <div class="slide-content">
+          ${finalContent}
+        </div>
+      </div>
+    `;
+  }).join('')}
+
+  <div class="footer">
+    <p>주식회사 해피솔라 - AI 문서 생성 시스템</p>
+    <p>문서 ID: ${document.id} | 생성 시간: ${new Date().toLocaleString('ko-KR')}</p>
+  </div>
+</body>
+</html>`;
+
     const page = await browser.newPage();
     await page.setContent(htmlContent, { waitUntil: 'networkidle0' });
     
@@ -97,7 +224,7 @@ ${content}
 회사: 주식회사 해피솔라
 
 오류 내용: PDF 생성 중 문제가 발생했습니다.
-문의사항이 있으시면 시스템 관리자에게 연락해주세요.
+Puppeteer 라이브러리를 설치하거나 시스템 관리자에게 연락해주세요.
 
 AI 문서 생성 시스템
 `;
