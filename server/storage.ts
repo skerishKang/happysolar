@@ -3,8 +3,11 @@ import { db } from "./db";
 import { users, documents, company, type User, type Document, type Company, type InsertDocument } from "@shared/schema";
 import puppeteer from "puppeteer";
 
-// Alternative PDF generation without puppeteer for Replit compatibility
+// PDF generation using jsPDF
 async function generatePDFContent(document: Document): Promise<Buffer> {
+  // Dynamic import for jsPDF
+  const jsPDF = (await import('jspdf')).default;
+  
   // Parse content whether it's string or object
   let contentText = '';
   
@@ -29,66 +32,57 @@ async function generatePDFContent(document: Document): Promise<Buffer> {
     }
   }
 
-  // Create a simple HTML document that can be saved as PDF
-  const htmlContent = `
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8">
-    <title>${document.title}</title>
-    <style>
-        body { 
-            font-family: 'Malgun Gothic', Arial, sans-serif; 
-            margin: 40px; 
-            line-height: 1.8; 
-            color: #333;
-            font-size: 14px;
-        }
-        .header { 
-            text-align: center; 
-            margin-bottom: 40px; 
-            border-bottom: 3px solid #4A90E2;
-            padding-bottom: 20px;
-        }
-        .header h1 { 
-            color: #2c3e50; 
-            font-size: 24px;
-            margin: 0 0 10px 0;
-            font-weight: bold;
-        }
-        .content { 
-            white-space: pre-wrap; 
-            margin: 20px 0;
-        }
-        .footer { 
-            margin-top: 50px; 
-            text-align: center; 
-            font-size: 11px; 
-            color: #95a5a6;
-            border-top: 1px solid #ecf0f1;
-            padding-top: 20px;
-        }
-    </style>
-</head>
-<body>
-    <div class="header">
-        <h1>${document.title}</h1>
-        <div class="date">생성일: ${new Date(document.createdAt).toLocaleDateString('ko-KR')}</div>
-    </div>
-    
-    <div class="content">
-        ${contentText}
-    </div>
-    
-    <div class="footer">
-        <p><strong>주식회사 해피솔라</strong></p>
-        <p>AI 자동화 문서 생성 시스템</p>
-    </div>
-</body>
-</html>`;
+  // Create PDF using jsPDF
+  const doc = new jsPDF({
+    orientation: 'portrait',
+    unit: 'mm',
+    format: 'a4'
+  });
 
-  // Return HTML content as buffer since puppeteer is having issues in Replit
-  return Buffer.from(htmlContent, 'utf-8');
+  // Add Korean font support
+  doc.setFont('helvetica');
+  
+  // Header
+  doc.setFontSize(20);
+  doc.setFont('helvetica', 'bold');
+  doc.text(document.title || '문서', 105, 30, { align: 'center' });
+  
+  doc.setFontSize(12);
+  doc.setFont('helvetica', 'normal');
+  doc.text(`생성일: ${new Date(document.createdAt).toLocaleDateString('ko-KR')}`, 105, 40, { align: 'center' });
+  
+  // Draw line under header
+  doc.setDrawColor(74, 144, 226);
+  doc.setLineWidth(0.5);
+  doc.line(20, 45, 190, 45);
+  
+  // Content
+  doc.setFontSize(11);
+  const lines = doc.splitTextToSize(contentText, 170);
+  let yPosition = 60;
+  
+  lines.forEach((line: string) => {
+    if (yPosition > 270) { // Add new page if needed
+      doc.addPage();
+      yPosition = 20;
+    }
+    doc.text(line, 20, yPosition);
+    yPosition += 6;
+  });
+  
+  // Footer
+  const pageCount = doc.getNumberOfPages();
+  for (let i = 1; i <= pageCount; i++) {
+    doc.setPage(i);
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'normal');
+    doc.text('주식회사 해피솔라 - AI 자동화 문서 생성 시스템', 105, 285, { align: 'center' });
+    doc.text(`페이지 ${i} / ${pageCount}`, 190, 285, { align: 'right' });
+  }
+
+  // Return PDF as buffer
+  const pdfBuffer = doc.output('arraybuffer');
+  return Buffer.from(pdfBuffer);
 }
 
 // Real PPTX generation using pptxgenjs library

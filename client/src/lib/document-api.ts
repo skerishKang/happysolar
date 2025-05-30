@@ -43,7 +43,7 @@ export async function downloadDocument(documentId: string, format: 'pdf' | 'pptx
   
   // Get filename from Content-Disposition header if available
   const contentDisposition = response.headers.get('Content-Disposition');
-  let filename = `document_${documentId}.${format === 'pptx' ? 'pptx' : 'html'}`;
+  let filename = `document_${documentId}.${format === 'pptx' ? 'pptx' : 'pdf'}`;
   
   if (contentDisposition) {
     const filenameMatch = contentDisposition.match(/filename="(.+)"/);
