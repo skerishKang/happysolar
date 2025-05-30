@@ -99,12 +99,12 @@ const featureTemplates: Record<string, { title: string; icon: string; fields: Fo
       { label: '회사소개서 파일', type: 'file', placeholder: '회사소개서 업로드 (PDF, PPT) - 회사 정보와 연혁을 자동 반영합니다', required: false },
       { label: '참고 PPT 템플릿', type: 'file', placeholder: '기존 PPT 파일 업로드 (PPT, PDF) - 디자인과 구성을 참고합니다', required: false },
       { label: '포함할 데이터 자료', type: 'file', placeholder: '매출현황, 실적자료 등 Excel/PDF 업로드 - 차트로 자동 변환합니다', required: false },
-      { label: '프레젠테이션 제목', type: 'text', placeholder: '아파트 태양광 발전소 구축 제안서', required: true },
-      { label: '발표 목적', type: 'select', options: ['신규 사업 제안', '제품/서비스 소개', '프로젝트 실적 보고', '투자 유치', '교육/세미나'], required: true },
-      { label: '대상 청중', type: 'text', placeholder: '아파트 입주자대표회의, 건설사 임원진', required: true },
-      { label: '발표 시간', type: 'select', options: ['10분 (간단 소개)', '20분 (표준 발표)', '30분 (상세 설명)', '60분 (워크샵형)'], required: true },
-      { label: '슬라이드 수', type: 'number', placeholder: '15', required: true },
-      { label: '핵심 메시지 (간단히)', type: 'text', placeholder: '태양광 에너지의 미래와 해피솔라 차별화', required: true },
+      { label: '프레젠테이션 제목', type: 'text', placeholder: '아파트 태양광 발전소 구축 제안서', required: false },
+      { label: '발표 목적', type: 'select', options: ['신규 사업 제안', '제품/서비스 소개', '프로젝트 실적 보고', '투자 유치', '교육/세미나'], required: false },
+      { label: '대상 청중', type: 'text', placeholder: '아파트 입주자대표회의, 건설사 임원진', required: false },
+      { label: '발표 시간', type: 'select', options: ['10분 (간단 소개)', '20분 (표준 발표)', '30분 (상세 설명)', '60분 (워크샵형)'], required: false },
+      { label: '슬라이드 수', type: 'number', placeholder: '15', required: false },
+      { label: '핵심 메시지 (간단히)', type: 'text', placeholder: '태양광 에너지의 미래와 해피솔라 차별화', required: false },
       { label: '디자인 스타일', type: 'select', options: ['전문적/비즈니스', '모던/심플', '친근한/컬러풀'], required: false }
     ]
   },
@@ -552,7 +552,7 @@ export default function DocumentGenerator({ featureId, companyInfo, onClose }: D
                           variant="ghost"
                           size="sm"
                           onClick={() => setUploadedFiles(prev => prev.filter((_, i) => i !== index))}
-                        >```python
+                        >
                           <X className="h-4 w-4" />
                         </Button>
                       </div>

@@ -350,75 +350,24 @@ JSON 형식으로 전문적인 계약서를 생성해주세요:
       // 업로드된 파일에서 자동으로 정보 추출
       let extractedInfo = '';
       if (uploadedFiles && uploadedFiles.length > 0) {
-        extractedInfo = '\n\n업로드된 참고 자료:\n';
+        extractedInfo = '\n\n업로드된 참고 자료(최대 5000자 미리보기):\n';
         uploadedFiles.forEach(file => {
-          extractedInfo += `- ${file.originalName}: ${file.content.substring(0, 500)}...\n`;
+          const preview = file.content.length > 5000 
+            ? file.content.substring(0, 5000) + '...(더 많은 내용 있음)'
+            : file.content;
+          extractedInfo += `- ${file.originalName}: ${preview}\n`;
         });
       }
 
-      return `팜솔라그룹(해피솔라)의 전문적인 "${presentationTitle}" 프레젠테이션을 정확히 ${slideCount}개 슬라이드로 제작해주세요.
-
-🎯 프레젠테이션 요구사항:
-- 제목: ${presentationTitle}
-- 발표자: ${presenter} 
-- 발표 시간: ${duration}
-- 스타일: ${style}
-- 대상: ${audience}
-- 회사: ${companyInfo.name} (${companyInfo.businessType})
-
-⚠️ 중요: 각 슬라이드의 detailedContent는 반드시 문자열(string) 형태로 작성해주세요.
-
-회사 정보:
-- 회사명: ${companyInfo.name}
-- 사업영역: ${companyInfo.businessType}
-- 대표자: ${companyInfo.representative}
-- 소재지: ${companyInfo.address}
-- 사업자등록번호: ${companyInfo.businessNumber}
-
-${extractedInfo}
-
-다음과 같은 구조로 전문적이고 임팩트 있는 프레젠테이션을 만들어주세요:
-
-1. 표지 슬라이드: 회사 소개 및 프레젠테이션 제목
-2. 회사 개요: 팜솔라그룹 소개 및 핵심 역량
-3. 사업 현황: 주요 실적 및 성과
-4. 제안 내용: 구체적인 사업 제안 또는 솔루션
-5. 기술적 우위: 차별화된 기술력 및 경쟁력
-6. 기대 효과: 예상 성과 및 ROI
-7. 실행 계획: 단계별 추진 방안
-8. 맺음말: 요약 및 제안
-
-각 슬라이드는 다음을 포함해야 합니다:
-- 명확하고 임팩트 있는 제목
-- 핵심 메시지 3-5개
-- 구체적인 데이터나 사례 (가능한 경우)
-- 다음 슬라이드로의 자연스러운 연결
-
-⚡ JSON 형식으로 응답해주세요 (모든 content는 반드시 문자열로!):
-{
-  "title": "${presentationTitle}",
-  "content": {
-    "slideStructure": [
-      {
-        "title": "슬라이드 제목 (문자열)",
-        "content": "핵심 메시지 (문자열)",
-        "detailedContent": "상세 내용을 문자열로 작성. 각 포인트는 줄바꿈(\\n)으로 구분. 예: • 첫 번째 내용\\n• 두 번째 내용\\n• 세 번째 내용"
-      }
-    ],
-    "presentationInfo": {
-      "totalSlides": ${slideCount},
-      "duration": "${duration}",
-      "presenter": "${presenter}",
-      "audience": "${audience}",
-      "style": "${style}"
-    },
-    "requirements": {
-      "stringTypeOnly": "모든 content와 detailedContent는 반드시 string 타입이어야 합니다",
-      "lineBreaks": "여러 항목은 \\n으로 구분하세요",
-      "bulletPoints": "• 기호를 사용하여 포인트를 구분하세요"
-    }
-  }
-}`;
+      return `팜솔라그룹(해피솔라)의 전문적인 "${presentationTitle}" 프레젠테이션을 정확히 ${slideCount}개 슬라이드로 제작해주세요.\n\n` +
+      `🎯 프레젠테이션 요구사항:\n` +
+      `- 제목, 발표 목적, 대상 청중, 슬라이드 수 등 비어있는 필드는 업로드된 파일(회사소개서, PPT 템플릿, 데이터 자료 등)에서 최대한 추출하여 자동으로 채워라.\n` +
+      `- 업로드된 PPT 템플릿, 이미지, 로고의 디자인(주요 색상, 폰트, 레이아웃 등)을 분석하여 슬라이드 디자인 가이드로 반영하라.\n` +
+      `  (예: '해피솔라 로고.png'의 파란색, 녹색을 포인트 컬러로 사용, 첨부 PPT 템플릿의 레이아웃 구조 참고 등)\n` +
+      `- 업로드된 데이터 자료(매출, 조직도, 연혁 등)는 슬라이드 차트/표/핵심 메시지로 반영하라.\n` +
+      `- 실제 데이터가 있으면 차트/표 삽입을 제안하라.\n` +
+      `- 캔바 연동 등 외부 디자인 툴 활용은 중장기 과제로 별도 논의 예정.\n` +
+      `\n- 제목: ${presentationTitle}\n- 발표자: ${presenter}\n- 발표 시간: ${duration}\n- 스타일: ${style}\n- 대상: ${audience}\n- 회사: ${companyInfo.name} (${companyInfo.businessType})\n\n⚠️ 중요: 각 슬라이드의 detailedContent는 반드시 문자열(string) 형태로 작성해주세요.\n\n회사 정보:\n- 회사명: ${companyInfo.name}\n- 사업영역: ${companyInfo.businessType}\n- 대표자: ${companyInfo.representative}\n- 소재지: ${companyInfo.address}\n- 사업자등록번호: ${companyInfo.businessNumber}\n\n${extractedInfo}\n\n다음과 같은 구조로 전문적이고 임팩트 있는 프레젠테이션을 만들어주세요:\n\n1. 표지 슬라이드: 회사 소개 및 프레젠테이션 제목\n2. 회사 개요: 팜솔라그룹 소개 및 핵심 역량\n3. 사업 현황: 주요 실적 및 성과\n4. 제안 내용: 구체적인 사업 제안 또는 솔루션\n5. 기술적 우위: 차별화된 기술력 및 경쟁력\n6. 기대 효과: 예상 성과 및 ROI\n7. 실행 계획: 단계별 추진 방안\n8. 맺음말: 요약 및 제안\n\n각 슬라이드는 다음을 포함해야 합니다:\n- 명확하고 임팩트 있는 제목\n- 핵심 메시지 3-5개\n- 구체적인 데이터나 사례 (가능한 경우)\n- 다음 슬라이드로의 자연스러운 연결\n\n⚡ JSON 형식으로 응답해주세요 (모든 content는 반드시 문자열로!):\n{\n  "title": "${presentationTitle}",\n  "content": {\n    "slideStructure": [\n      {\n        "title": "슬라이드 제목 (문자열)",\n        "content": "핵심 메시지 (문자열)",\n        "detailedContent": "상세 내용을 문자열로 작성. 각 포인트는 줄바꿈(\\n)으로 구분. 예: • 첫 번째 내용\\n• 두 번째 내용\\n• 세 번째 내용"\n      }\n    ],\n    "presentationInfo": {\n      "totalSlides": ${slideCount},\n      "duration": "${duration}",\n      "presenter": "${presenter}",\n      "audience": "${audience}",\n      "style": "${style}"\n    },\n    "requirements": {\n      "stringTypeOnly": "모든 content와 detailedContent는 반드시 string 타입이어야 합니다",\n      "lineBreaks": "여러 항목은 \\n으로 구분하세요",\n      "bulletPoints": "• 기호를 사용하여 포인트를 구분하세요"\n    }\n  }\n}`;
 
     case 'proposal':
       return `${baseCompanyInfo}

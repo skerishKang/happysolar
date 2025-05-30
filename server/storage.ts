@@ -52,6 +52,20 @@ async function generatePDFContent(document: Document): Promise<Buffer> {
       }
     }
 
+    // [개선] slideStructure 데이터 구조 보정
+    if (!Array.isArray(slides) || slides.length === 0) {
+      slides = [{
+        title: document.title || '문서',
+        content: document.content?.fullText || '내용이 없습니다.',
+        detailedContent: document.content?.fullText || '내용이 없습니다.'
+      }];
+    }
+    slides = (slides || []).map((slide, idx) => ({
+      title: typeof slide.title === 'string' ? slide.title : `슬라이드 ${idx + 1}`,
+      content: typeof slide.content === 'string' ? slide.content : (slide.content ? JSON.stringify(slide.content) : ''),
+      detailedContent: typeof slide.detailedContent === 'string' ? slide.detailedContent : (slide.detailedContent ? JSON.stringify(slide.detailedContent) : '')
+    }));
+
     // HTML 내용 생성
     const htmlContent = `
 <!DOCTYPE html>
