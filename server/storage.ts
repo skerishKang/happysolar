@@ -3,13 +3,10 @@ import { db } from "./db";
 import { users, documents, company, type User, type Document, type Company, type InsertDocument } from "@shared/schema";
 import { jsPDF } from "jspdf";
 
-// Real PDF generation using jsPDF
+// Real PDF generation using jsPDF - Extract content from PPT and convert properly
 async function generatePDFContent(document: Document): Promise<Buffer> {
   try {
     const doc = new jsPDF();
-    
-    // Set Korean font (fallback to default if not available)
-    doc.setFont('helvetica', 'normal');
     
     let yPosition = 20;
     const pageWidth = doc.internal.pageSize.getWidth();
@@ -19,70 +16,58 @@ async function generatePDFContent(document: Document): Promise<Buffer> {
     // Add title
     doc.setFontSize(20);
     doc.setFont('helvetica', 'bold');
-    const title = document.title || '문서';
+    const title = document.title || 'Document';
     doc.text(title, pageWidth / 2, yPosition, { align: 'center' });
     yPosition += 15;
     
     // Add company info
     doc.setFontSize(12);
     doc.setFont('helvetica', 'normal');
-    doc.text('주식회사 해피솔라', pageWidth / 2, yPosition, { align: 'center' });
+    doc.text('HappySolar Co., Ltd.', pageWidth / 2, yPosition, { align: 'center' });
     yPosition += 10;
-    doc.text(`생성일: ${new Date(document.createdAt).toLocaleDateString('ko-KR')}`, pageWidth / 2, yPosition, { align: 'center' });
+    doc.text(`Generated: ${new Date(document.createdAt).toLocaleDateString()}`, pageWidth / 2, yPosition, { align: 'center' });
     yPosition += 20;
     
-    // Add content
-    doc.setFontSize(11);
+    // Extract content from PPT structure (same as PPT content)
     let contentText = '';
     
-    if (typeof document.content === 'string') {
-      contentText = document.content;
-    } else if (document.content && typeof document.content === 'object') {
-      if (document.content.slideStructure && Array.isArray(document.content.slideStructure)) {
-        contentText = document.content.slideStructure.map((slide: any, index: number) => {
-          return `${index + 1}. ${slide.title || ''}\n${slide.detailedContent || slide.content || slide.description || ''}`;
-        }).join('\n\n');
-      } else if (document.content.fullText) {
-        contentText = document.content.fullText;
-      } else {
-        // Extract meaningful text from structured object
-        const extractText = (obj: any): string[] => {
-          const texts: string[] = [];
-          if (typeof obj === 'string') {
-            texts.push(obj);
-          } else if (typeof obj === 'object' && obj !== null) {
-            Object.entries(obj).forEach(([key, value]) => {
-              if (key !== 'documentType' && key !== 'title') {
-                if (typeof value === 'string' && value.length > 10) {
-                  texts.push(`${key}: ${value}`);
-                } else if (typeof value === 'object') {
-                  texts.push(...extractText(value));
-                }
-              }
-            });
-          }
-          return texts;
-        };
+    if (document.content && typeof document.content === 'object' && document.content.slideStructure && Array.isArray(document.content.slideStructure)) {
+      // Extract content from slideStructure (same structure as PPT)
+      contentText = document.content.slideStructure.map((slide: any, index: number) => {
+        const slideTitle = slide.title || `Slide ${index + 1}`;
+        const slideContent = slide.detailedContent || slide.content || slide.description || '';
         
-        const extractedTexts = extractText(document.content);
-        contentText = extractedTexts.join('\n\n') || '문서 내용을 처리 중입니다.';
-      }
+        return `${slideTitle}\n\n${slideContent}`;
+      }).join('\n\n' + '='.repeat(50) + '\n\n');
+    } else if (typeof document.content === 'string') {
+      contentText = document.content;
+    } else if (document.content && document.content.fullText) {
+      contentText = document.content.fullText;
+    } else {
+      contentText = 'Content processing...';
     }
     
-    // Clean up content text
+    // Clean up content text for better PDF display
     contentText = contentText
       .replace(/```json/g, '')
       .replace(/```/g, '')
-      .replace(/\{[^}]*\}/g, '')
-      .replace(/\[[^\]]*\]/g, '')
-      .replace(/\n\s*\n/g, '\n\n')
+      .replace(/\n\s*\n\s*\n/g, '\n\n')
       .trim();
     
-    // Split text into lines and add to PDF
+    // Convert Korean characters to ASCII-safe format for PDF
+    contentText = contentText
+      .replace(/•/g, '- ')
+      .replace(/【/g, '[')
+      .replace(/】/g, ']')
+      .replace(/「/g, '"')
+      .replace(/」/g, '"');
+    
+    // Add content
+    doc.setFontSize(11);
     const lines = doc.splitTextToSize(contentText, maxWidth);
     
     for (let i = 0; i < lines.length; i++) {
-      if (yPosition > 270) { // Check if we need a new page
+      if (yPosition > 270) {
         doc.addPage();
         yPosition = 20;
       }
@@ -95,16 +80,16 @@ async function generatePDFContent(document: Document): Promise<Buffer> {
     for (let i = 1; i <= pageCount; i++) {
       doc.setPage(i);
       doc.setFontSize(8);
-      doc.text(`주식회사 해피솔라 - AI 문서 생성 시스템 (${i}/${pageCount})`, pageWidth / 2, 290, { align: 'center' });
+      doc.text(`HappySolar Co., Ltd. - AI Document Generation System (${i}/${pageCount})`, pageWidth / 2, 290, { align: 'center' });
     }
     
     return Buffer.from(doc.output('arraybuffer'));
     
   } catch (error) {
     console.error('Error generating PDF:', error);
-    // Fallback to simple text if PDF generation fails
-    const textContent = `${document.title || '문서'}\n\n생성일: ${new Date(document.createdAt).toLocaleDateString('ko-KR')}\n\nPDF 생성 오류: ${error.message}`;
-    return Buffer.from(textContent, 'utf-8');
+    // Return simple text content when PDF generation fails
+    const fallbackContent = `${document.title || 'Document'}\n\nGenerated: ${new Date(document.createdAt).toLocaleDateString()}\n\nPDF generation error occurred. Please try again.`;
+    return Buffer.from(fallbackContent, 'utf-8');
   }
 }
 
@@ -129,11 +114,9 @@ async function generatePPTXContent(document: Document): Promise<Buffer> {
   
   // Extract requested slide count from form data if available
   if (document.formData) {
-    const slideCountField = Object.values(document.formData).find((value: any) => 
-      typeof value === 'string' && !isNaN(Number(value)) && Number(value) > 0 && Number(value) <= 50
-    );
-    if (slideCountField) {
-      requestedSlideCount = Number(slideCountField);
+    // Find slide count from form data (usually field_3 for presentations)
+    if (document.formData.field_3 && !isNaN(Number(document.formData.field_3))) {
+      requestedSlideCount = Number(document.formData.field_3);
     }
     
     // Extract uploaded file references
@@ -146,7 +129,16 @@ async function generatePPTXContent(document: Document): Promise<Buffer> {
     }
   }
   
-  if (typeof document.content === 'string') {
+  if (document.content && typeof document.content === 'object' && document.content.slideStructure && Array.isArray(document.content.slideStructure)) {
+    // Use slideStructure from OpenAI response - this contains the rich content
+    slides = document.content.slideStructure.slice(0, requestedSlideCount).map((slide: any, index: number) => ({
+      slideNumber: index + 1,
+      title: slide.title || `슬라이드 ${index + 1}`,
+      content: slide.content || slide.description || '',
+      detailedContent: slide.detailedContent || slide.content || slide.description || '상세 내용을 생성 중입니다.',
+      designElements: slide.designElements || (index === 0 ? 'cover-slide' : 'content-slide')
+    }));
+  } else if (typeof document.content === 'string') {
     const sections = document.content.split(/\n\n+/).filter(section => section.trim());
     slides = sections.slice(0, requestedSlideCount).map((section, index) => ({
       slideNumber: index + 1,
@@ -154,70 +146,15 @@ async function generatePPTXContent(document: Document): Promise<Buffer> {
       content: section,
       detailedContent: section.split('\n').slice(1).join('\n') || '상세 내용이 여기에 포함됩니다.'
     }));
-  } else if (document.content && typeof document.content === 'object') {
-    // Check for structured presentation content
-    if (document.content.slideStructure && Array.isArray(document.content.slideStructure)) {
-      slides = document.content.slideStructure.slice(0, requestedSlideCount).map((slide: any, index: number) => ({
-        slideNumber: index + 1,
-        title: slide.title || `슬라이드 ${index + 1}`,
-        content: slide.content || slide.description || '',
-        detailedContent: slide.content || slide.description || '이 슬라이드의 상세 내용이 포함됩니다.',
-        designElements: slide.designElements || ''
-      }));
-    } else if (document.content.content && Array.isArray(document.content.content)) {
-      slides = document.content.content.slice(0, requestedSlideCount);
-    } else {
-      // Create slides from available content, expanding to requested count
-      const baseContent = document.content.fullText || JSON.stringify(document.content, null, 2);
-      const sections = baseContent.split(/\n\n+/).filter(section => section.trim());
-      
-      // Generate slides to match requested count with rich content
-      const slideTopics = [
-        '개요 및 목표',
-        '현황 분석',
-        '핵심 전략',
-        '실행 계획',
-        '기대 효과',
-        '투자 계획',
-        '리스크 관리',
-        '향후 계획'
-      ];
-      
-      for (let i = 0; i < requestedSlideCount; i++) {
-        const sectionIndex = i % sections.length;
-        const section = sections[sectionIndex] || `슬라이드 ${i + 1} 내용`;
-        const topic = slideTopics[i] || `주제 ${i + 1}`;
-        
-        // Generate rich content for each slide
-        const detailedContent = `
-• 주요 내용: ${section.split('\n')[0] || '핵심 내용 설명'}
-
-• 세부 사항:
-  - ${section.length > 50 ? section.substring(0, 50) + '...' : section}
-  - 태양광 발전 시스템의 효율성 극대화
-  - 지속 가능한 에너지 솔루션 제공
-  - ROI 분석 및 투자 수익성 검토
-
-• 기술적 특징:
-  - 고효율 태양광 모듈 적용
-  - 스마트 인버터 시스템 구축
-  - 실시간 모니터링 솔루션
-
-• 기대 효과:
-  - 연간 전력 생산량: 1,500MWh
-  - CO2 절감 효과: 750톤/년
-  - 투자 회수 기간: 6-8년
-
-${uploadedFileContent}`;
-        
-        slides.push({
-          slideNumber: i + 1,
-          title: `${topic}`,
-          content: section,
-          detailedContent: detailedContent.trim(),
-          designElements: i === 0 ? 'cover-slide' : 'content-slide'
-        });
-      }
+  } else {
+    // Fallback: Create minimal slides
+    for (let i = 0; i < requestedSlideCount; i++) {
+      slides.push({
+        slideNumber: i + 1,
+        title: `슬라이드 ${i + 1}`,
+        content: `슬라이드 ${i + 1} 내용`,
+        detailedContent: `• 주요 내용이 여기에 표시됩니다\n• 추가 설명과 데이터\n• 실행 방안 및 결론${uploadedFileContent}`
+      });
     }
   }
 

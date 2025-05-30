@@ -363,54 +363,38 @@ JSON 형식으로 전문적인 계약서를 생성해주세요:
 - 디자인 테마: ${formData.field_4 || '전문적'}
 
 📁 업로드된 참고 자료:
-${uploadedFiles.map(file => `- ${file.originalName}: ${file.content.substring(0, 200)}...`).join('\n')}
+${uploadedFiles.map(file => `파일명: ${file.originalName}\n내용: ${file.content}`).join('\n\n')}
 
-💡 AI PPT 고급 기능:
-1. 업로드된 자료의 핵심 내용 추출 및 재구성
-2. 태양광 업계 전문 템플릿 자동 적용
-3. 실제 사업 데이터 기반 분석 및 제안
-4. 팜솔라/해피솔라 브랜딩 일관성
-5. 투자 수익성 및 기술 분석 포함
+**핵심 지침:**
+1. 업로드된 파일 내용을 반드시 각 슬라이드에 구체적으로 포함하세요
+2. 실제 데이터, 숫자, 고유 정보를 추출하여 활용하세요  
+3. 각 슬라이드마다 최소 3-5개의 구체적인 포인트를 포함하세요
+4. detailedContent에는 실제 발표 가능한 상세 내용을 작성하세요
 
-**중요: 업로드된 파일의 실제 내용을 적극 활용하여 각 슬라이드에 구체적이고 실용적인 내용을 포함하세요.**
-
-JSON 형식으로 전문적인 프레젠테이션을 생성해주세요:
+JSON 형식으로 ${formData.field_3 || '5'}장의 상세한 프레젠테이션을 생성해주세요:
 {
-  "title": "[제목]_프레젠테이션_[날짜]",
+  "title": "${formData.field_0 || '프레젠테이션'}_${new Date().toLocaleDateString()}",
   "content": {
     "documentType": "태양광 사업 프레젠테이션",
     "slideStructure": [
       {
         "slideNumber": 1,
-        "title": "표지",
-        "content": "회사소개 및 제목",
-        "designElements": "팜솔라 그룹 로고, 그라데이션 배경"
-      },
-      {
-        "slideNumber": 2,
-        "title": "목차",
-        "content": "발표 구성",
-        "designElements": "깔끔한 목록 형태"
+        "title": "실제 업로드 파일 기반 제목",
+        "content": "업로드 파일에서 추출한 핵심 요약",
+        "detailedContent": "업로드 파일의 구체적 내용을 바탕으로 한 상세 설명 (최소 200자 이상)\n• 구체적 데이터 포인트 1\n• 구체적 데이터 포인트 2\n• 구체적 데이터 포인트 3\n• 실제 수치나 성과\n• 향후 계획이나 목표"
       }
     ],
-    "brandingGuidelines": {
-      "logoUsage": "팜솔라/해피솔라/탑솔라 3사 로고 배치",
-      "colorScheme": "그린-블루 그라데이션",
-      "typography": "전문적 폰트 (맑은고딕, Arial)"
-    },
-    "dataVisuals": {
-      "charts": "매출 성장, 시장점유율 차트",
-      "infographics": "태양광 시스템 구조도",
-      "comparisons": "경쟁사 비교표"
-    },
-    "designTemplate": {
-      "canvaCompatible": "캔바 연동 가능 구조",
-      "powerpointReady": "PPT 직접 변환 가능",
-      "responsiveDesign": "모바일/데스크톱 최적화"
-    },
-    "fullText": "완성된 프레젠테이션 전체 스크립트 및 슬라이드 내용"
+    "fullText": "모든 슬라이드의 상세 내용을 포함한 완전한 프레젠테이션 스크립트"
   }
-}${fileContent}`;
+}
+
+**중요사항:**
+- slideStructure 배열에 정확히 ${formData.field_3 || '5'}개의 슬라이드를 생성하세요
+- 각 슬라이드의 detailedContent는 업로드된 파일의 실제 내용을 기반으로 하세요
+- 일반적인 설명이 아닌 구체적이고 실용적인 내용을 포함하세요
+- 업로드된 파일에 있는 실제 데이터, 수치, 고유 정보를 활용하세요
+
+${fileContent}`;
 
     case 'proposal':
       return `${baseCompanyInfo}
