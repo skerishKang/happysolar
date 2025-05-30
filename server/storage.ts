@@ -2,66 +2,122 @@ import { eq } from "drizzle-orm";
 import { db } from "./db";
 import { users, documents, company, type User, type Document, type Company, type InsertDocument } from "@shared/schema";
 
-// 간단한 PDF 생성 - 실제 PDF 바이너리 생성
+// 실제 PDF 생성 - jsPDF 사용
 async function generatePDFContent(document: Document): Promise<Buffer> {
   try {
-    console.log('Starting simple PDF generation for document:', document.id);
+    console.log('Starting PDF generation for document:', document.id);
 
-    let contentText = '';
+    const jsPDF = (await import('jspdf')).default;
+    const doc = new jsPDF();
+
     let slides: any[] = [];
+    let requestedSlideCount = 5;
+
+    if (document.formData && document.formData.field_3 && !isNaN(Number(document.formData.field_3))) {
+      requestedSlideCount = Number(document.formData.field_3);
+    }
 
     if (document.content && typeof document.content === 'object' && document.content.slideStructure && Array.isArray(document.content.slideStructure)) {
-      slides = document.content.slideStructure;
-    } else if (typeof document.content === 'string') {
-      contentText = document.content;
+      slides = document.content.slideStructure.slice(0, requestedSlideCount);
     } else {
-      contentText = '내용 처리 중...';
+      for (let i = 0; i < requestedSlideCount; i++) {
+        slides.push({
+          title: `슬라이드 ${i + 1}`,
+          content: `슬라이드 ${i + 1} 내용`,
+          detailedContent: `• 주요 내용이 여기에 표시됩니다\n• 추가 설명과 데이터\n• 실행 방안 및 결론`
+        });
+      }
     }
 
-    // 간단한 PDF-like 텍스트 문서 생성 (실제 PDF 대신 구조화된 텍스트)
-    let pdfContent = `해피솔라 문서 생성 시스템
-============================================
+    // 첫 페이지 - 표지
+    doc.setFillColor(30, 60, 114); // 진한 파란색
+    doc.rect(0, 0, 210, 297, 'F');
 
-제목: ${document.title || '문서'}
-생성일: ${new Date(document.createdAt).toLocaleDateString('ko-KR')}
-회사: 주식회사 해피솔라
-============================================
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(24);
+    doc.text(document.title || '프레젠테이션', 105, 80, { align: 'center' });
 
-`;
+    doc.setFontSize(16);
+    doc.setTextColor(243, 156, 18); // 주황색
+    doc.text('주식회사 해피솔라', 105, 120, { align: 'center' });
 
-    if (slides.length > 0) {
-      slides.forEach((slide: any, index: number) => {
-        pdfContent += `\n슬라이드 ${index + 1}: ${slide.title || `슬라이드 ${index + 1}`}\n`;
-        pdfContent += '-'.repeat(50) + '\n';
-        const content = slide.detailedContent || slide.content || slide.description || '';
-        pdfContent += content.replace(/[<>&"']/g, '') + '\n\n';
+    doc.setFontSize(12);
+    doc.setTextColor(189, 195, 199); // 회색
+    doc.text(new Date().toLocaleDateString('ko-KR'), 105, 150, { align: 'center' });
+
+    // 각 슬라이드를 새 페이지로 추가
+    slides.forEach((slide: any, index: number) => {
+      doc.addPage();
+
+      // 헤더 배경
+      doc.setFillColor(52, 152, 219); // 파란색
+      doc.rect(0, 0, 210, 30, 'F');
+
+      // 슬라이드 번호 원
+      doc.setFillColor(231, 76, 60); // 빨간색
+      doc.circle(180, 15, 8, 'F');
+
+      // 슬라이드 번호 텍스트
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(14);
+      doc.text(`${index + 1}`, 180, 18, { align: 'center' });
+
+      // 슬라이드 제목
+      doc.setFontSize(18);
+      doc.text(slide.title || `슬라이드 ${index + 1}`, 20, 18);
+
+      // 슬라이드 내용
+      doc.setTextColor(44, 62, 80); // 어두운 회색
+      doc.setFontSize(12);
+      
+      const content = slide.detailedContent || slide.content || slide.description || '';
+      const lines = content.split('\n').filter(line => line.trim());
+      
+      let yPosition = 50;
+      lines.forEach((line: string) => {
+        if (yPosition > 250) return; // 페이지 하단 근처에서 멈춤
+        doc.text(line, 20, yPosition);
+        yPosition += 8;
       });
-    } else {
-      pdfContent += contentText.replace(/[<>&"']/g, '') + '\n\n';
-    }
 
-    pdfContent += `\n============================================
-© 2025 주식회사 해피솔라 - AI 문서 생성 시스템
-============================================`;
+      // 푸터
+      doc.setFillColor(52, 73, 94); // 어두운 회색
+      doc.rect(0, 280, 210, 17, 'F');
 
-    console.log('PDF content generated successfully');
-    return Buffer.from(pdfContent, 'utf-8');
+      doc.setTextColor(189, 195, 199);
+      doc.setFontSize(10);
+      doc.text('주식회사 해피솔라 - AI 문서 생성 시스템', 20, 290);
+      doc.text(`${index + 1} / ${slides.length}`, 180, 290, { align: 'center' });
+    });
+
+    const pdfBuffer = Buffer.from(doc.output('arraybuffer'));
+    console.log('PDF generated successfully');
+    return pdfBuffer;
 
   } catch (error) {
     console.error('PDF generation failed:', error);
-
-    const fallbackContent = `해피솔라 문서
-================
-
-제목: ${document.title || '문서'}
-생성일: ${new Date(document.createdAt).toLocaleDateString('ko-KR')}
-
-${typeof document.content === 'string' ? document.content.replace(/[<>&"']/g, '') : '문서 내용을 불러올 수 없습니다.'}
-
-================
-주식회사 해피솔라`;
-
-    return Buffer.from(fallbackContent, 'utf-8');
+    
+    // 폴백으로 간단한 PDF 생성
+    const jsPDF = (await import('jspdf')).default;
+    const doc = new jsPDF();
+    
+    doc.setFontSize(16);
+    doc.text(document.title || '문서', 20, 30);
+    doc.setFontSize(12);
+    doc.text(`생성일: ${new Date(document.createdAt).toLocaleDateString('ko-KR')}`, 20, 50);
+    doc.text('주식회사 해피솔라', 20, 70);
+    
+    const content = typeof document.content === 'string' ? document.content : '문서 내용을 불러올 수 없습니다.';
+    const lines = content.split('\n').slice(0, 20); // 최대 20줄
+    
+    let yPosition = 90;
+    lines.forEach((line: string) => {
+      if (yPosition > 250) return;
+      doc.text(line, 20, yPosition);
+      yPosition += 10;
+    });
+    
+    return Buffer.from(doc.output('arraybuffer'));
   }
 }
 
