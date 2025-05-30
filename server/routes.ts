@@ -109,21 +109,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       if (format === 'pdf') {
         const pdfBuffer = await storage.generatePDF(document);
-        const sanitizedTitle = (document.title || 'document')
-          .replace(/[^a-zA-Z0-9가-힣\s\-_]/g, '')
-          .replace(/\s+/g, '_')
-          .trim();
-        
-        // Check if it's actual PDF content or fallback text
-        const isActualPDF = pdfBuffer[0] === 0x25 && pdfBuffer[1] === 0x50 && pdfBuffer[2] === 0x44 && pdfBuffer[3] === 0x46; // %PDF
-        
-        let filename, contentType;
-        if (isActualPDF) {
-          filename = `${sanitizedTitle}_${new Date().toISOString().split('T')[0]}.pdf`;
-          contentType = 'application/pdf';
-        } else {
-          filename = `${sanitizedTitle}_${new Date().toISOString().split('T')[0]}.txt`;
-          contentType = 'text/plain; charset=utf-8';
+        const filename = `${document.title || 'document'}_${new Date().toISOString().split('T')[0]}.pdf`;
+
+        // Always try to serve as PDF first
+        let contentType = 'application/pdf';
+
+        // Check if it's HTML fallback
+        const content = pdfBuffer.toString('utf8', 0, 100); // Check first 100 chars
+        if (content.includes('<!DOCTYPE html>')) {
+          contentType = 'text/html';
         }
 
         res.setHeader('Content-Type', contentType);
