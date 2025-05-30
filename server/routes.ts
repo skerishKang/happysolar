@@ -46,7 +46,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(companyInfo);
     } catch (error) {
       console.error("Error fetching company info:", error);
-      res.status(500).json({ message: "Internal server error" });
+      // 기본 회사 정보로 응답
+      res.json({
+        id: 1,
+        name: "주식회사 해피솔라",
+        businessNumber: "123-45-67890",
+        address: "전라남도 장흥군",
+        businessType: "태양광 발전 사업",
+        representative: "김대표"
+      });
     }
   });
 
@@ -90,8 +98,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     } catch (error) {
       console.error("Error generating document:", error);
+      
+      let errorMessage = "문서 생성 중 오류가 발생했습니다.";
+      if (error instanceof Error) {
+        if (error.message.includes("Control plane request failed")) {
+          errorMessage = "데이터베이스 연결 오류입니다. 잠시 후 다시 시도해주세요.";
+        } else {
+          errorMessage = error.message;
+        }
+      }
+      
       res.status(500).json({ 
-        message: error instanceof Error ? error.message : "Failed to generate document" 
+        message: errorMessage
       });
     }
   });

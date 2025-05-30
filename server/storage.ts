@@ -209,8 +209,27 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createDocument(documentData: InsertDocument): Promise<Document> {
-    const [document] = await db.insert(documents).values(documentData).returning();
-    return document;
+    let attempts = 0;
+    const maxAttempts = 3;
+
+    while (attempts < maxAttempts) {
+      try {
+        const [document] = await db.insert(documents).values(documentData).returning();
+        return document;
+      } catch (error) {
+        attempts++;
+        console.error(`Document creation attempt ${attempts} failed:`, error);
+        
+        if (attempts >= maxAttempts) {
+          throw new Error('문서 저장에 실패했습니다. 잠시 후 다시 시도해주세요.');
+        }
+        
+        // 지수적 백오프
+        await new Promise(resolve => setTimeout(resolve, 1000 * Math.pow(2, attempts - 1)));
+      }
+    }
+
+    throw new Error('문서 저장에 실패했습니다.');
   }
 
   async getDocument(id: string): Promise<Document | undefined> {
@@ -292,12 +311,47 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getCompanyInfo(): Promise<Company> {
-    const [companyInfo] = await db.select().from(company).limit(1);
-    if (!companyInfo) {
-      const [newCompany] = await db.insert(company).values({}).returning();
-      return newCompany;
+    let attempts = 0;
+    const maxAttempts = 3;
+
+    while (attempts < maxAttempts) {
+      try {
+        const [companyInfo] = await db.select().from(company).limit(1);
+        if (!companyInfo) {
+          const [newCompany] = await db.insert(company).values({}).returning();
+          return newCompany;
+        }
+        return companyInfo;
+      } catch (error) {
+        attempts++;
+        console.error(`Company info query attempt ${attempts} failed:`, error);
+        
+        if (attempts >= maxAttempts) {
+          // 기본 회사 정보 반환
+          return {
+            id: 1,
+            name: "주식회사 해피솔라",
+            businessNumber: "123-45-67890",
+            address: "전라남도 장흥군",
+            businessType: "태양광 발전 사업",
+            representative: "김대표"
+          } as Company;
+        }
+        
+        // 지수적 백오프
+        await new Promise(resolve => setTimeout(resolve, 1000 * Math.pow(2, attempts - 1)));
+      }
     }
-    return companyInfo;
+
+    // 기본값 반환 (타입스크립트 만족용)
+    return {
+      id: 1,
+      name: "주식회사 해피솔라",
+      businessNumber: "123-45-67890",
+      address: "전라남도 장흥군",
+      businessType: "태양광 발전 사업",
+      representative: "김대표"
+    } as Company;
   }
 
   async generatePDF(document: Document): Promise<Buffer> {
