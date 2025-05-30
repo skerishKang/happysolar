@@ -4,8 +4,8 @@ import { users, documents, company, type User, type Document, type Company, type
 // PDF generation using Puppeteer with Korean font support
 async function generatePDFContent(document: Document): Promise<Buffer> {
   try {
-    const puppeteer = require('puppeteer-core');
-    const chromium = require('@sparticuz/chromium');
+    const puppeteer = (await import('puppeteer-core')).default;
+    const chromium = (await import('@sparticuz/chromium')).default;
 
     // Extract content from document
     let contentText = '';
@@ -33,10 +33,10 @@ async function generatePDFContent(document: Document): Promise<Buffer> {
     <head>
       <meta charset="UTF-8">
       <style>
-        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;700&family=Malgun+Gothic&display=swap');
         
         body {
-          font-family: 'Noto Sans KR', Arial, sans-serif;
+          font-family: 'Noto Sans KR', 'Malgun Gothic', '맑은 고딕', 'Apple Gothic', 'Helvetica Neue', Arial, sans-serif;
           margin: 0;
           padding: 20px;
           line-height: 1.6;
@@ -159,18 +159,34 @@ async function generatePDFContent(document: Document): Promise<Buffer> {
     </html>`;
 
     const browser = await puppeteer.launch({
-      args: chromium.args,
+      args: [
+        ...chromium.args,
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+        '--disable-dev-shm-usage',
+        '--disable-accelerated-2d-canvas',
+        '--disable-gpu',
+        '--disable-background-timer-throttling',
+        '--disable-backgrounding-occluded-windows',
+        '--disable-renderer-backgrounding'
+      ],
       defaultViewport: chromium.defaultViewport,
       executablePath: await chromium.executablePath(),
       headless: chromium.headless,
     });
 
     const page = await browser.newPage();
-    await page.setContent(htmlContent);
+    
+    // Set content and wait for fonts to load
+    await page.setContent(htmlContent, { waitUntil: 'networkidle0' });
+    
+    // Wait for fonts to load
+    await page.evaluateHandle('document.fonts.ready');
     
     const pdfBuffer = await page.pdf({
       format: 'A4',
       printBackground: true,
+      preferCSSPageSize: false,
       margin: {
         top: '20mm',
         right: '15mm',
@@ -222,11 +238,14 @@ async function generatePPTXContent(document: Document): Promise<Buffer> {
   // Create a new presentation
   const pptx = new PptxGenJS();
   
-  // Set presentation properties
+  // Set presentation properties for better compatibility
   pptx.theme = {
-    headFontFace: 'Noto Sans KR',
-    bodyFontFace: 'Noto Sans KR'
+    headFontFace: 'Arial',
+    bodyFontFace: 'Arial'
   };
+  
+  // Set layout and compatibility options
+  pptx.layout = 'LAYOUT_16x9';
   
   // Handle content whether it's string or object
   let slides: any[] = [];
@@ -509,18 +528,18 @@ async function generatePPTXContent(document: Document): Promise<Buffer> {
   });
 
   // Generate and return the PPTX file as buffer
-  const output = await pptx.write();
+  const output = await pptx.write({ outputType: 'arraybuffer' });
   
-  // Handle different output types from pptx.write()
-  if (output instanceof Buffer) {
-    return output;
+  // Convert ArrayBuffer to Buffer
+  if (output instanceof ArrayBuffer) {
+    return Buffer.from(output);
   } else if (output instanceof Uint8Array) {
     return Buffer.from(output);
-  } else if (output instanceof ArrayBuffer) {
-    return Buffer.from(output);
+  } else if (Buffer.isBuffer(output)) {
+    return output;
   } else {
-    // If it's a Blob or other type, convert to buffer
-    const arrayBuffer = await (output as Blob).arrayBuffer();
+    // Fallback conversion
+    const arrayBuffer = output as ArrayBuffer;
     return Buffer.from(arrayBuffer);
   }
 }
