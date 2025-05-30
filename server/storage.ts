@@ -215,21 +215,57 @@ async function generatePDFContent(document: Document): Promise<Buffer> {
   } catch (error) {
     console.error('PDF generation failed:', error);
     
-    // 폴백으로 간단한 텍스트 PDF 생성
-    const fallbackContent = `
-문서 생성 오류
-
-제목: ${document.title || '문서'}
-생성일: ${new Date().toLocaleDateString('ko-KR')}
-회사: 주식회사 해피솔라
-
-오류 내용: PDF 생성 중 문제가 발생했습니다.
-Puppeteer 라이브러리를 설치하거나 시스템 관리자에게 연락해주세요.
-
-AI 문서 생성 시스템
-`;
-    
-    return Buffer.from(fallbackContent, 'utf8');
+    // jsPDF를 사용한 폴백 PDF 생성
+    try {
+      const { jsPDF } = await import('jspdf');
+      const doc = new jsPDF();
+      
+      // 한글 폰트 설정 (기본 폰트 사용)
+      doc.setFont('helvetica');
+      doc.setFontSize(20);
+      doc.text(document.title || '문서', 20, 30);
+      
+      doc.setFontSize(12);
+      doc.text(`생성일: ${new Date().toLocaleDateString('ko-KR')}`, 20, 50);
+      doc.text('회사: 주식회사 해피솔라', 20, 65);
+      
+      // 콘텐츠 추가
+      let yPosition = 90;
+      if (document.content && typeof document.content === 'object' && document.content.slideStructure) {
+        document.content.slideStructure.forEach((slide: any, index: number) => {
+          if (yPosition > 250) {
+            doc.addPage();
+            yPosition = 30;
+          }
+          
+          doc.setFontSize(14);
+          doc.text(`${index + 1}. ${slide.title || `슬라이드 ${index + 1}`}`, 20, yPosition);
+          yPosition += 15;
+          
+          doc.setFontSize(10);
+          const content = slide.detailedContent || slide.content || '';
+          const lines = typeof content === 'string' ? content.split('\n') : [String(content)];
+          lines.forEach(line => {
+            if (yPosition > 270) {
+              doc.addPage();
+              yPosition = 30;
+            }
+            doc.text(line.substring(0, 80), 25, yPosition);
+            yPosition += 8;
+          });
+          yPosition += 10;
+        });
+      }
+      
+      return Buffer.from(doc.output('arraybuffer'));
+      
+    } catch (fallbackError) {
+      console.error('Fallback PDF generation also failed:', fallbackError);
+      
+      // 최종 폴백 - 간단한 텍스트 응답
+      const simpleContent = `${document.title || '문서'}\n\n생성일: ${new Date().toLocaleDateString('ko-KR')}\n회사: 주식회사 해피솔라\n\nPDF 생성 중 오류가 발생했습니다.`;
+      return Buffer.from(simpleContent, 'utf8');
+    }
   }
 }
 
@@ -314,7 +350,7 @@ async function generatePPTXContent(document: Document): Promise<Buffer> {
             { color: '2ECC71', position: 100 }
           ]
         },
-        shadow: { type: 'outer', blur: 3, offset: 2, angle: 45, color: '000000', opacity: 30 }
+        shadow: { type: 'outer', blur: 3, offset: 2, angle: 45, color: '000000', opacity: 0.3 }
       });
 
       contentSlide.addText(`${index + 1}`, {
@@ -326,7 +362,7 @@ async function generatePPTXContent(document: Document): Promise<Buffer> {
       contentSlide.addText(slide.title || `슬라이드 ${index + 1}`, {
         x: 1.6, y: 0.3, w: 6.5, h: 1.2,
         fontSize: 36, bold: true, color: 'FFFFFF', align: 'left', valign: 'middle',
-        shadow: { type: 'outer', blur: 2, offset: 1, angle: 45, color: '000000', opacity: 50 }
+        shadow: { type: 'outer', blur: 2, offset: 1, angle: 45, color: '000000', opacity: 0.5 }
       });
 
       // 콘텐츠 영역 배경
@@ -334,11 +370,25 @@ async function generatePPTXContent(document: Document): Promise<Buffer> {
         x: 0.3, y: 2.2, w: 9.4, h: 4.3,
         fill: { color: 'F8F9FA' },
         line: { color: 'E9ECEF', width: 1 },
-        shadow: { type: 'outer', blur: 5, offset: 2, angle: 45, color: '000000', opacity: 10 }
+        shadow: { type: 'outer', blur: 5, offset: 2, angle: 45, color: '000000', opacity: 0.1 }
       });
 
-      // 내용을 구조화하여 표시
-      const content = slide.detailedContent || slide.content || slide.description || '';
+      // 내용을 구조화하여 표시 - content 타입 체크 추가
+      let content = '';
+      if (typeof slide.detailedContent === 'string') {
+        content = slide.detailedContent;
+      } else if (typeof slide.content === 'string') {
+        content = slide.content;
+      } else if (typeof slide.description === 'string') {
+        content = slide.description;
+      } else if (slide.detailedContent && typeof slide.detailedContent === 'object') {
+        content = JSON.stringify(slide.detailedContent);
+      } else if (slide.content && typeof slide.content === 'object') {
+        content = JSON.stringify(slide.content);
+      } else {
+        content = `슬라이드 ${index + 1} 내용`;
+      }
+
       const contentLines = content.split('\n').filter(line => line.trim());
       
       // 메인 콘텐츠
