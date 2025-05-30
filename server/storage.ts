@@ -7,7 +7,8 @@ async function generatePDFContent(document: Document): Promise<Buffer> {
   try {
     console.log('Starting PDF generation for document:', document.id);
     
-    const puppeteer = await import('puppeteer');
+    const puppeteer = await import('puppeteer-core');
+    const chromium = await import('@sparticuz/chromium');
     
     let slides: any[] = [];
     let requestedSlideCount = 5;
@@ -162,8 +163,10 @@ async function generatePDFContent(document: Document): Promise<Buffer> {
 
     // Puppeteer로 PDF 생성
     const browser = await puppeteer.launch({
-      headless: true,
-      args: ['--no-sandbox', '--disable-setuid-sandbox']
+      args: chromium.args,
+      defaultViewport: chromium.defaultViewport,
+      executablePath: await chromium.executablePath(),
+      headless: chromium.headless,
     });
     
     const page = await browser.newPage();
@@ -252,56 +255,130 @@ async function generatePPTXContent(document: Document): Promise<Buffer> {
       fontSize: 16, color: 'BDC3C7', align: 'center'
     });
 
-    // 컨텐츠 슬라이드들
+    // 컨텐츠 슬라이드들 - 개선된 디자인
     slides.forEach((slide: any, index: number) => {
       const contentSlide = pptx.addSlide();
 
-      // 헤더 배경
+      // 태양광 테마 그라데이션 헤더
       contentSlide.addShape('rect', {
-        x: 0, y: 0, w: 10, h: 1.5,
-        fill: { color: '3498DB' }
+        x: 0, y: 0, w: 10, h: 1.8,
+        fill: { 
+          type: 'gradient',
+          colors: [
+            { color: 'FF6B35', position: 0 },
+            { color: 'F7931E', position: 50 },
+            { color: 'FFD100', position: 100 }
+          ],
+          angle: 45
+        }
       });
 
-      // 슬라이드 번호
+      // 태양광 아이콘 효과
       contentSlide.addShape('ellipse', {
-        x: 8.5, y: 0.25, w: 1, h: 1,
-        fill: { color: 'E74C3C' }
+        x: 0.2, y: 0.3, w: 1.2, h: 1.2,
+        fill: { color: 'FFFFFF', transparency: 20 },
+        line: { color: 'FFFFFF', width: 2 }
+      });
+
+      // 슬라이드 번호를 더 눈에 띄게
+      contentSlide.addShape('ellipse', {
+        x: 8.3, y: 0.1, w: 1.4, h: 1.4,
+        fill: { 
+          type: 'gradient',
+          colors: [
+            { color: '27AE60', position: 0 },
+            { color: '2ECC71', position: 100 }
+          ]
+        },
+        shadow: { type: 'outer', blur: 3, offset: 2, angle: 45, color: '000000', opacity: 30 }
       });
 
       contentSlide.addText(`${index + 1}`, {
-        x: 8.5, y: 0.25, w: 1, h: 1,
-        fontSize: 24, bold: true, color: 'FFFFFF', align: 'center', valign: 'middle'
+        x: 8.3, y: 0.1, w: 1.4, h: 1.4,
+        fontSize: 28, bold: true, color: 'FFFFFF', align: 'center', valign: 'middle'
       });
 
-      // 제목
+      // 제목을 더 임팩트 있게
       contentSlide.addText(slide.title || `슬라이드 ${index + 1}`, {
-        x: 0.5, y: 0.25, w: 7.5, h: 1,
-        fontSize: 32, bold: true, color: 'FFFFFF', align: 'left', valign: 'middle'
+        x: 1.6, y: 0.3, w: 6.5, h: 1.2,
+        fontSize: 36, bold: true, color: 'FFFFFF', align: 'left', valign: 'middle',
+        shadow: { type: 'outer', blur: 2, offset: 1, angle: 45, color: '000000', opacity: 50 }
       });
 
-      // 내용
+      // 콘텐츠 영역 배경
+      contentSlide.addShape('rect', {
+        x: 0.3, y: 2.2, w: 9.4, h: 4.3,
+        fill: { color: 'F8F9FA' },
+        line: { color: 'E9ECEF', width: 1 },
+        shadow: { type: 'outer', blur: 5, offset: 2, angle: 45, color: '000000', opacity: 10 }
+      });
+
+      // 내용을 구조화하여 표시
       const content = slide.detailedContent || slide.content || slide.description || '';
       const contentLines = content.split('\n').filter(line => line.trim());
+      
+      // 메인 콘텐츠
+      const mainContent = contentLines.slice(0, 3).join('\n');
+      const additionalContent = contentLines.slice(3).join('\n');
 
-      contentSlide.addText(contentLines.join('\n'), {
-        x: 0.5, y: 2, w: 9, h: 4.5,
-        fontSize: 18, color: '2C3E50', align: 'left', valign: 'top'
-      });
+      if (mainContent) {
+        contentSlide.addText(mainContent, {
+          x: 0.7, y: 2.5, w: 8.6, h: 2.5,
+          fontSize: 20, color: '2C3E50', align: 'left', valign: 'top',
+          lineSpacing: 32
+        });
+      }
 
-      // 푸터
+      // 추가 내용이 있으면 별도 영역에 표시
+      if (additionalContent) {
+        contentSlide.addShape('rect', {
+          x: 0.5, y: 5.2, w: 9, h: 1.3,
+          fill: { color: 'E8F6F3' },
+          line: { color: '27AE60', width: 2 }
+        });
+
+        contentSlide.addText('✓ ' + additionalContent.replace(/•/g, '✓'), {
+          x: 0.8, y: 5.4, w: 8.4, h: 0.9,
+          fontSize: 16, color: '27AE60', align: 'left', valign: 'top',
+          bold: true
+        });
+      }
+
+      // 개선된 푸터
       contentSlide.addShape('rect', {
-        x: 0, y: 7, w: 10, h: 0.5,
-        fill: { color: '34495E' }
+        x: 0, y: 6.8, w: 10, h: 0.7,
+        fill: { 
+          type: 'gradient',
+          colors: [
+            { color: '34495E', position: 0 },
+            { color: '2C3E50', position: 100 }
+          ]
+        }
       });
 
-      contentSlide.addText('주식회사 해피솔라 - AI 문서 생성 시스템', {
-        x: 0.5, y: 7, w: 6, h: 0.5,
-        fontSize: 12, color: 'BDC3C7', align: 'left', valign: 'middle'
+      // 회사 로고 영역
+      contentSlide.addShape('rect', {
+        x: 0.3, y: 6.95, w: 0.4, h: 0.4,
+        fill: { color: 'FFD100' }
+      });
+
+      contentSlide.addText('주식회사 해피솔라 | 태양광 전문 기업', {
+        x: 0.9, y: 6.8, w: 6, h: 0.7,
+        fontSize: 14, color: 'BDC3C7', align: 'left', valign: 'middle',
+        bold: true
+      });
+
+      // 진행률 표시
+      const progressWidth = (index + 1) / slides.length * 2;
+      contentSlide.addShape('rect', {
+        x: 7.5, y: 7.05, w: progressWidth, h: 0.2,
+        fill: { color: '27AE60' }
       });
 
       contentSlide.addText(`${index + 1} / ${slides.length}`, {
-        x: 8.5, y: 7, w: 1, h: 0.5,
-        fontSize: 12, color: 'BDC3C7', align: 'center', valign: 'middle'
+        x: 8.5, y: 6.8, w: 1.2, h: 0.7,
+        fontSize: 14, color: 'BDC3C7', align: 'center', valign: 'middle',
+        bold: true
       });
     });
 
