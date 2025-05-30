@@ -109,19 +109,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       if (format === 'pdf') {
         const pdfBuffer = await storage.generatePDF(document);
-        let filename = `${document.title || 'document'}_${new Date().toISOString().split('T')[0]}`;
-        let contentType = 'application/pdf';
-        
-        // Check if it's actually HTML fallback (when PDF generation fails)
-        const content = pdfBuffer.toString('utf8');
-        if (content.includes('<!DOCTYPE html>') || content.includes('<html>')) {
-          filename += '.html';
-          contentType = 'text/html';
-        } else {
-          filename += '.pdf';
-        }
+        const sanitizedTitle = (document.title || 'document').replace(/[^a-zA-Z0-9가-힣\s]/g, '').trim();
+        const filename = `${sanitizedTitle}_${new Date().toISOString().split('T')[0]}.pdf`;
 
-        res.setHeader('Content-Type', contentType);
+        res.setHeader('Content-Type', 'application/pdf');
         res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(filename)}"`);
         res.send(pdfBuffer);
       } else if (format === 'pptx') {

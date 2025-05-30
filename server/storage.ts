@@ -125,39 +125,34 @@ async function generatePDFContent(document: Document): Promise<Buffer> {
 </body>
 </html>`;
 
-  try {
-    const browser = await puppeteer.launch({
-      headless: true,
-      args: [
-        '--no-sandbox',
-        '--disable-setuid-sandbox',
-        '--disable-dev-shm-usage',
-        '--disable-gpu',
-        '--disable-features=VizDisplayCompositor',
-        '--single-process'
-      ]
-    });
-    const page = await browser.newPage();
-    await page.setContent(htmlContent, { waitUntil: 'networkidle0' });
-    
-    const pdfBuffer = await page.pdf({
-      format: 'A4',
-      margin: {
-        top: '2cm',
-        right: '2cm',
-        bottom: '2cm',
-        left: '2cm'
-      },
-      printBackground: true
-    });
-    
-    await browser.close();
-    return Buffer.from(pdfBuffer);
-  } catch (error) {
-    console.error('PDF generation failed:', error);
-    // Fallback to HTML format when PDF generation fails
-    return Buffer.from(htmlContent, 'utf8');
-  }
+  const browser = await puppeteer.launch({
+    headless: true,
+    args: [
+      '--no-sandbox',
+      '--disable-setuid-sandbox',
+      '--disable-dev-shm-usage',
+      '--disable-gpu',
+      '--disable-features=VizDisplayCompositor',
+      '--single-process'
+    ]
+  });
+  
+  const page = await browser.newPage();
+  await page.setContent(htmlContent, { waitUntil: 'networkidle0' });
+  
+  const pdfBuffer = await page.pdf({
+    format: 'A4',
+    margin: {
+      top: '2cm',
+      right: '2cm',
+      bottom: '2cm',
+      left: '2cm'
+    },
+    printBackground: true
+  });
+  
+  await browser.close();
+  return Buffer.from(pdfBuffer);
 }
 
 // Real PPTX generation using pptxgenjs library
@@ -249,8 +244,20 @@ async function generatePPTXContent(document: Document): Promise<Buffer> {
   });
 
   // Generate and return the PPTX file as buffer
-  const uint8Array = await pptx.write();
-  return Buffer.from(uint8Array);
+  const output = await pptx.write();
+  
+  // Handle different output types from pptx.write()
+  if (output instanceof Buffer) {
+    return output;
+  } else if (output instanceof Uint8Array) {
+    return Buffer.from(output);
+  } else if (output instanceof ArrayBuffer) {
+    return Buffer.from(output);
+  } else {
+    // If it's a Blob or other type, convert to buffer
+    const arrayBuffer = await (output as Blob).arrayBuffer();
+    return Buffer.from(arrayBuffer);
+  }
 }
 
 interface IStorage {
