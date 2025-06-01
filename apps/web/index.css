@@ -1,0 +1,150 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: 225 15% 97%; /* #F7F8FC */
+  --foreground: 225 20% 12%; /* #1A1D29 */
+  --muted: 225 10% 94%; /* #F0F1F5 */
+  --muted-foreground: 225 8% 48%; /* #6B7280 */
+  --popover: 0 0% 100%; /* #FFFFFF */
+  --popover-foreground: 225 20% 12%; /* #1A1D29 */
+  --card: 0 0% 100%; /* #FFFFFF */
+  --card-foreground: 225 20% 12%; /* #1A1D29 */
+  --border: 225 12% 89%; /* #E0E4EA */
+  --input: 225 12% 92%; /* #E8ECF2 */
+  --primary: 240 100% 66%; /* #6366F1 */
+  --primary-foreground: 0 0% 100%; /* #FFFFFF */
+  --secondary: 225 8% 95%; /* #F1F3F6 */
+  --secondary-foreground: 225 20% 12%; /* #1A1D29 */
+  --accent: 220 100% 68%; /* #4F46E5 */
+  --accent-foreground: 0 0% 100%; /* #FFFFFF */
+  --destructive: 0 72% 51%; /* #DC2626 */
+  --destructive-foreground: 0 0% 100%; /* #FFFFFF */
+  --ring: 240 100% 66%; /* #6366F1 */
+  --radius: 0.875rem;
+  --chart-1: 217 91% 60%; /* #3B82F6 */
+  --chart-2: 142 71% 45%; /* #10B981 */
+  --chart-3: 262 83% 58%; /* #8B5CF6 */
+  --chart-4: 346 77% 49%; /* #EF4444 */
+  --chart-5: 45 93% 47%; /* #F59E0B */
+  --sidebar-background: 0 0% 100%; /* #FFFFFF */
+  --sidebar-foreground: 225 20% 12%; /* #1A1D29 */
+  --sidebar-primary: 240 100% 66%; /* #6366F1 */
+  --sidebar-primary-foreground: 0 0% 100%; /* #FFFFFF */
+  --sidebar-accent: 225 8% 96%; /* #F3F4F7 */
+  --sidebar-accent-foreground: 225 20% 12%; /* #1A1D29 */
+  --sidebar-border: 225 12% 89%; /* #E0E4EA */
+  --sidebar-ring: 240 100% 66%; /* #6366F1 */
+}
+
+.dark {
+  --background: 222 84% 5%; /* #020817 */
+  --foreground: 210 40% 98%; /* #F8FAFC */
+  --muted: 217 32% 17%; /* #1E293B */
+  --muted-foreground: 215 20% 65%; /* #94A3B8 */
+  --popover: 222 84% 5%; /* #020817 */
+  --popover-foreground: 210 40% 98%; /* #F8FAFC */
+  --card: 222 84% 5%; /* #020817 */
+  --card-foreground: 210 40% 98%; /* #F8FAFC */
+  --border: 217 32% 17%; /* #1E293B */
+  --input: 217 32% 17%; /* #1E293B */
+  --primary: 22 92% 50%; /* #FF6B35 */
+  --primary-foreground: 210 40% 98%; /* #F8FAFC */
+  --secondary: 217 32% 17%; /* #1E293B */
+  --secondary-foreground: 210 40% 98%; /* #F8FAFC */
+  --accent: 39 100% 50%; /* #FFA500 */
+  --accent-foreground: 222 84% 5%; /* #020817 */
+  --destructive: 0 63% 31%; /* #7F1D1D */
+  --destructive-foreground: 210 40% 98%; /* #F8FAFC */
+  --ring: 22 92% 50%; /* #FF6B35 */
+  --radius: 0.75rem;
+  --chart-1: 220 70% 50%; /* #2563EB */
+  --chart-2: 160 60% 45%; /* #16A34A */
+  --chart-3: 30 80% 55%; /* #D97706 */
+  --chart-4: 280 65% 60%; /* #9333EA */
+  --chart-5: 340 75% 55%; /* #E11D48 */
+  --sidebar-background: 222 84% 5%; /* #020817 */
+  --sidebar-foreground: 210 40% 98%; /* #F8FAFC */
+  --sidebar-primary: 22 92% 50%; /* #FF6B35 */
+  --sidebar-primary-foreground: 210 40% 98%; /* #F8FAFC */
+  --sidebar-accent: 217 32% 17%; /* #1E293B */
+  --sidebar-accent-foreground: 210 40% 98%; /* #F8FAFC */
+  --sidebar-border: 217 32% 17%; /* #1E293B */
+  --sidebar-ring: 22 92% 50%; /* #FF6B35 */
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply font-sans antialiased bg-background text-foreground;
+  }
+}
+
+@layer utilities {
+  .gradient-bg {
+    background: linear-gradient(135deg, #6366F1 0%, #8B5CF6 50%, #3B82F6 100%);
+  }
+  
+  .ai-gradient {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #667eea 100%);
+  }
+  
+  .neural-gradient {
+    background: linear-gradient(135deg, #4F46E5 0%, #7C3AED 25%, #2563EB 50%, #3B82F6 75%, #6366F1 100%);
+    background-size: 300% 300%;
+    animation: neuralFlow 8s ease-in-out infinite;
+  }
+  
+  @keyframes neuralFlow {
+    0%, 100% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+  }
+  
+  .card-hover {
+    transition: all 0.3s ease;
+  }
+  
+  .card-hover:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  }
+  
+  .processing-animation {
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+    background-size: 200% 100%;
+    animation: shimmer 2s infinite;
+  }
+  
+  @keyframes shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+  }
+  
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  
+  @keyframes slideUp {
+    from { 
+      opacity: 0;
+      transform: translateY(30px); 
+    }
+    to { 
+      opacity: 1;
+      transform: translateY(0); 
+    }
+  }
+  
+  .animate-fade-in {
+    animation: fadeIn 0.5s ease-in-out;
+  }
+  
+  .animate-slide-up {
+    animation: slideUp 0.6s ease-out;
+  }
+}
