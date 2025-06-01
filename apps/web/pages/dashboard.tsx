@@ -1,73 +1,16 @@
-import { useState, useEffect } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import DocumentGenerator from "@/components/document-generator";
-import { 
-  File, 
-  Receipt, 
-  Handshake, 
-  Presentation, 
-  FileText, 
-  Users, 
-  Mail,
-  Clock,
-  TrendingUp,
-  UserCheck,
-  Download,
-  Share,
-  Building,
-  IdCard,
-  MapPin,
-  Factory
-} from "lucide-react";
+import { useState } from "react";
 import { downloadDocument } from "@/lib/document-api";
+import DocumentGenerator from "@/components/document-generator";
+import { FeatureCards, RecentDocuments, CompanyInfoPanel, StatsCards, useDashboardData } from "./dashboard";
+import { Receipt, File, Handshake, Presentation, FileText, Users, Mail, UserCheck, Building, Clock, TrendingUp } from "lucide-react";
 
 console.log('DEBUG: 5. dashboard.tsx started.');
-
-interface DocumentStats {
-  monthlyDocuments: number;
-  timeSaved: string;
-  efficiency: string;
-  activeUsers: number;
-}
-
-interface RecentDocument {
-  id: string;
-  title: string;
-  type: string;
-  createdAt: string;
-  status: string;
-}
-
-interface CompanyInfo {
-  name: string;
-  businessNumber: string;
-  address: string;
-  businessType: string;
-  representative: string;
-}
 
 export default function Dashboard() {
   console.log('DEBUG: 6. Dashboard component rendering.');
   const [selectedFeature, setSelectedFeature] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-
-  // Fetch company information
-  const { data: companyInfo } = useQuery<CompanyInfo>({
-    queryKey: ['/api/company'],
-  });
-
-  // Fetch document statistics
-  const { data: stats } = useQuery<DocumentStats>({
-    queryKey: ['/api/documents/stats'],
-  });
-
-  // Fetch recent documents
-  const { data: recentDocs } = useQuery<RecentDocument[]>({
-    queryKey: ['/api/documents/recent'],
-  });
+  const { companyInfo, stats, recentDocs } = useDashboardData();
 
   const handleDownload = async (docId: string, format: 'pdf' | 'pptx') => {
     try {
@@ -272,217 +215,20 @@ export default function Dashboard() {
         </div>
 
         {/* Quick Stats */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-12 animate-slide-up">
-          <Card className="p-6 shadow-sm border border-gray-100">
-            <div className="flex items-center space-x-3">
-              <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
-                <File className="w-6 h-6 text-blue-600" />
-              </div>
-              <div>
-                <p className="text-sm text-gray-600">이번 달 생성</p>
-                <p className="text-2xl font-bold text-gray-900">{stats?.monthlyDocuments || 0}</p>
-              </div>
-            </div>
-          </Card>
-          <Card className="p-6 shadow-sm border border-gray-100">
-            <div className="flex items-center space-x-3">
-              <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center">
-                <Clock className="w-6 h-6 text-green-600" />
-              </div>
-              <div>
-                <p className="text-sm text-gray-600">절약 시간</p>
-                <p className="text-2xl font-bold text-gray-900">{stats?.timeSaved || "0시간"}</p>
-              </div>
-            </div>
-          </Card>
-          <Card className="p-6 shadow-sm border border-gray-100">
-            <div className="flex items-center space-x-3">
-              <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center">
-                <TrendingUp className="w-6 h-6 text-purple-600" />
-              </div>
-              <div>
-                <p className="text-sm text-gray-600">효율성 증가</p>
-                <p className="text-2xl font-bold text-gray-900">{stats?.efficiency || "0%"}</p>
-              </div>
-            </div>
-          </Card>
-          <Card className="p-6 shadow-sm border border-gray-100">
-            <div className="flex items-center space-x-3">
-              <div className="w-12 h-12 bg-orange-100 rounded-xl flex items-center justify-center">
-                <Users className="w-6 h-6 text-orange-600" />
-              </div>
-              <div>
-                <p className="text-sm text-gray-600">활성 사용자</p>
-                <p className="text-2xl font-bold text-gray-900">{stats?.activeUsers || 0}</p>
-              </div>
-            </div>
-          </Card>
-        </div>
+        <StatsCards stats={stats} />
 
         {/* Main Feature Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
-          {features.map((feature) => {
-            const IconComponent = feature.icon;
-            return (
-              <Card 
-                key={feature.id}
-                className="p-0 shadow-lg border-0 card-hover cursor-pointer group overflow-hidden bg-white/80 backdrop-blur-sm"
-                onClick={() => openModal(feature.id)}
-              >
-                <CardContent className="p-0">
-                  <div className={`h-2 bg-gradient-to-r ${feature.color}`}></div>
-                  <div className="p-8">
-                    <div className="flex items-center justify-between mb-6">
-                      <div className={`w-16 h-16 bg-gradient-to-br ${feature.color} rounded-2xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300`}>
-                        <IconComponent className="w-8 h-8 text-white" />
-                      </div>
-                      <Badge className={`${feature.bgColor} ${feature.textColor} text-xs font-bold px-3 py-1 rounded-full border-2 border-current`}>
-                        {feature.badge}
-                      </Badge>
-                    </div>
-                    <h3 className="text-xl font-bold text-gray-900 mb-3 group-hover:text-indigo-600 transition-colors">
-                      {feature.title}
-                    </h3>
-                    <p className="text-gray-600 mb-6 leading-relaxed text-sm">
-                      {feature.description}
-                    </p>
-
-                    {/* AI Features Pills */}
-                    <div className="flex flex-wrap gap-2 mb-6">
-                      {feature.aiFeatures?.map((aiFeature, index) => (
-                        <span 
-                          key={index}
-                          className="px-3 py-1 bg-gray-100 text-gray-700 text-xs rounded-full border"
-                        >
-                          {aiFeature}
-                        </span>
-                      ))}
-                    </div>
-
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-2 text-sm text-gray-500">
-                        <Clock className="w-4 h-4" />
-                        <span className="font-medium">{feature.estimatedTime}</span>
-                      </div>
-                      <Button className={`${feature.buttonColor} text-white transition-all duration-300 shadow-lg hover:shadow-xl`}>
-                        <span className="font-medium">AI 생성 시작</span>
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
+        <FeatureCards features={features} openModal={openModal} />
 
         {/* Recent Documents Section */}
-        <Card className="p-8 shadow-lg border border-gray-100 mb-12">
-          <div className="flex items-center justify-between mb-8">
-            <div>
-              <h3 className="text-2xl font-bold text-gray-900 mb-2">최근 생성 문서</h3>
-              <p className="text-gray-600">AI가 생성한 최신 문서들을 확인하세요</p>
-            </div>
-            <Button variant="ghost" className="text-blue-600 hover:text-blue-700 font-medium">
-              <span>전체 보기</span>
-            </Button>
-          </div>
-
-          <div className="space-y-4">
-            {recentDocs && recentDocs.length > 0 ? (
-              recentDocs.map((doc) => (
-                <div key={doc.id} className="flex items-center justify-between p-4 rounded-2xl bg-gray-50 hover:bg-gray-100 transition-colors">
-                  <div className="flex items-center space-x-4">
-                    <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
-                      <Receipt className="w-6 h-6 text-blue-600" />
-                    </div>
-                    <div>
-                      <h4 className="font-semibold text-gray-900">{doc.title}</h4>
-                      <p className="text-sm text-gray-600">{doc.createdAt} 생성 • PDF 형식</p>
-                    </div>
-                  </div>
-                  <div className="flex space-x-2">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleDownload(doc.id, 'pdf')}
-                      className="text-gray-500 hover:text-blue-600"
-                      title="HTML 파일로 다운로드"
-                    >
-                      <Download className="w-4 h-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleDownload(doc.id, 'pptx')}
-                      className="text-gray-500 hover:text-orange-600"
-                      title="PowerPoint 형식으로 다운로드"
-                    >
-                      <Presentation className="w-4 h-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="text-gray-500 hover:text-blue-600"
-                    >
-                      <Share className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </div>
-              ))
-            ) : (
-              <div className="text-center py-8">
-                <FileText className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                <p className="text-gray-500">아직 생성된 문서가 없습니다</p>
-                <p className="text-sm text-gray-400">위의 기능들을 사용해서 첫 번째 문서를 생성해보세요</p>
-              </div>
-            )}
-          </div>
-        </Card>
+        <RecentDocuments recentDocs={recentDocs} handleDownload={handleDownload} />
 
         {/* Company Information Panel */}
-        <div className="bg-gradient-to-r from-slate-900 to-slate-800 rounded-3xl p-8 text-white">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
-            <div>
-              <h3 className="text-2xl font-bold mb-4">회사 정보 자동 연동</h3>
-              <p className="text-slate-300 mb-6 leading-relaxed">
-                모든 문서에 회사 정보가 자동으로 입력됩니다. 
-                사업자등록증 정보를 기반으로 정확한 문서를 생성합니다.
-              </p>
-              <div className="space-y-3">
-                <div className="flex items-center space-x-3">
-                  <Building className="w-5 h-5 text-blue-400" />
-                  <span>{companyInfo?.name || "주식회사 해피솔라"}</span>
-                </div>
-                <div className="flex items-center space-x-3">
-                  <IdCard className="w-5 h-5 text-green-400" />
-                  <span>사업자등록번호: {companyInfo?.businessNumber || "578-87-02666"}</span>
-                </div>
-                <div className="flex items-center space-x-3">
-                  <MapPin className="w-5 h-5 text-red-400" />
-                  <span>{companyInfo?.address || "전라남도 장흥군 장흥읍 장흥로 30, 2층"}</span>
-                </div>
-                <div className="flex items-center space-x-3">
-                  <Factory className="w-5 h-5 text-yellow-400" />
-                  <span>{companyInfo?.businessType || "건설업, 전기공사업, 태양광발전소 부대장비"}</span>
-                </div>
-              </div>
-            </div>
-            <div className="text-center">
-              <div className="bg-white/10 rounded-2xl p-8 backdrop-blur-sm">
-                <div className="w-24 h-24 mx-auto mb-4 gradient-bg rounded-2xl flex items-center justify-center">
-                  <TrendingUp className="w-12 h-12 text-white" />
-                </div>
-                <h4 className="text-xl font-semibold mb-2">스마트 자동화</h4>
-                <p className="text-slate-300 text-sm">AI 기술로 업무 효율성을 극대화하세요</p>
-              </div>
-            </div>
-          </div>
-        </div>
+        <CompanyInfoPanel companyInfo={companyInfo} />
       </main>
 
       {/* Document Generation Modal */}
       {isModalOpen && selectedFeature && (
-        (() => { console.log('DEBUG: 7. DocumentGenerator is about to render.'); return null; })() ||
         <DocumentGenerator 
           featureId={selectedFeature}
           companyInfo={companyInfo}
