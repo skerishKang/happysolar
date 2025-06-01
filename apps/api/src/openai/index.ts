@@ -1,0 +1,1 @@
+export { generateDocumentContent } from "./service"; 
