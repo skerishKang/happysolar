@@ -1,5 +1,5 @@
-import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
+import { Button } from "../../components/ui/button";
+import { Card } from "../../components/ui/card";
 import { Receipt, FileText, Presentation, Download, Share } from 'lucide-react';
 import React from 'react';
 import { RecentDocument } from './types';

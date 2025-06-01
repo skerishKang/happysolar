@@ -22,6 +22,16 @@
     "typescript": "^5.2.2"
   },
   "dependencies": {
-    "happysolar-workspace": "file:"
+    "@radix-ui/react-tooltip": "^1.2.7",
+    "@tailwindcss/postcss": "^4.1.8",
+    "@tanstack/react-query": "^5.79.0",
+    "autoprefixer": "^10.4.21",
+    "clsx": "^2.1.1",
+    "drizzle-zod": "^0.8.2",
+    "happysolar-workspace": "file:",
+    "lucide-react": "^0.511.0",
+    "tailwind-merge": "^3.3.0",
+    "tailwindcss": "^4.1.8",
+    "wouter": "^3.7.1"
   }
 }

@@ -1,5 +1,6 @@
-function formatDocumentContent(document: any): string {
-  // ... (storage.ts의 해당 함수 전체 복사)
+function formatDocumentContent(_document: any): string {
+  // TODO: 실제 구현 필요
+  return "";
 }
 
 export { formatDocumentContent }; 

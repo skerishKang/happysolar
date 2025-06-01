@@ -1,5 +1,6 @@
-function createPromptForDocumentType(type: string, formData: Record<string, any>, companyInfo: any, uploadedFiles: any[]): string {
-  // ... (openai.ts의 해당 함수 전체 복사)
+function createPromptForDocumentType(_type: string, _formData: Record<string, any>, _companyInfo: any, _uploadedFiles: any[]): string {
+  // TODO: 실제 구현 필요
+  return "";
 }
 
 function getDocumentTypeTitle(type: string): string {

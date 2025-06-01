@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { downloadDocument } from "@/lib/document-api";
-import DocumentGenerator from "@/components/document-generator";
+import { downloadDocument } from "../lib/document-api";
+import DocumentGenerator from "../components/document-generator";
 import { FeatureCards, RecentDocuments, CompanyInfoPanel, StatsCards, useDashboardData } from "./dashboard";
 import { Receipt, File, Handshake, Presentation, FileText, Users, Mail, UserCheck, Building, Clock, TrendingUp } from "lucide-react";
 

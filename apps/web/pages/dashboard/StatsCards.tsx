@@ -1,4 +1,4 @@
-import { Card } from '@/components/ui/card';
+import { Card } from "../../components/ui/card";
 import { File, Clock, TrendingUp, Users } from 'lucide-react';
 import { DocumentStats } from './types';
 import React from 'react';

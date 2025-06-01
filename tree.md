@@ -1,4 +1,4 @@
-# 📂 프로젝트 폴더/파일 구조 진단 및 개선 제안 (2024-06)
+# 📂 프로젝트 폴더/파일 구조 (2024-06-01 최신)
 
 ---
 
@@ -9,23 +9,27 @@
 ├─ apps/
 │  ├─ web/
 │  │  ├─ components/
-│  │  │  ├─ document-generator.tsx (523 lines)
+│  │  │  ├─ document-generator/
+│  │  │  │  ├─ FeatureTemplates.ts (130 lines)
+│  │  │  │  ├─ DocumentForm.tsx (179 lines)
+│  │  │  │  ├─ FileUploadBox.tsx (35 lines)
+│  │  │  │  ├─ PreviewModal.tsx (32 lines)
+│  │  │  │  ├─ useDocumentForm.ts (24 lines)
+│  │  │  │  ├─ types.ts (7 lines)
+│  │  │  │  └─ index.ts (6 lines)
 │  │  │  ├─ presentation-viewer.tsx (156 lines)
-│  │  │  ├─ ui/
-│  │  │  │  ├─ accordion.tsx (57 lines)
-│  │  │  │  ├─ alert-dialog.tsx (140 lines)
-│  │  │  │  ├─ ... (생략)
-│  │  │  │  └─ sidebar.tsx (772 lines)
-│  │  │  └─ document-generator/
-│  │  │     ├─ FeatureTemplates.ts (130 lines)
-│  │  │     ├─ DocumentForm.tsx (179 lines)
-│  │  │     ├─ FileUploadBox.tsx (35 lines)
-│  │  │     ├─ PreviewModal.tsx (32 lines)
-│  │  │     ├─ useDocumentForm.ts (24 lines)
-│  │  │     ├─ types.ts (7 lines)
-│  │  │     └─ index.ts (6 lines)
+│  │  │  └─ ui/
+│  │  │     └─ ... (UI 컴포넌트 다수)
 │  │  ├─ pages/
-│  │  │  ├─ dashboard.tsx (494 lines)
+│  │  │  ├─ dashboard/
+│  │  │  │  ├─ FeatureCards.tsx (80 lines)
+│  │  │  │  ├─ RecentDocuments.tsx (83 lines)
+│  │  │  │  ├─ CompanyInfoPanel.tsx (57 lines)
+│  │  │  │  ├─ StatsCards.tsx (65 lines)
+│  │  │  │  ├─ types.ts (22 lines)
+│  │  │  │  ├─ useDashboardData.ts (22 lines)
+│  │  │  │  └─ index.ts (6 lines)
+│  │  │  ├─ dashboard.tsx (1 line, 엔트리포인트)
 │  │  │  └─ not-found.tsx (22 lines)
 │  │  ├─ lib/
 │  │  │  ├─ document-api.ts (85 lines)
@@ -34,21 +38,22 @@
 │  │  ├─ hooks/
 │  │  │  ├─ use-mobile.tsx (20 lines)
 │  │  │  └─ use-toast.ts (192 lines)
-│  │  ├─ src/
-│  │  │  ├─ components/
-│  │  │  │  └─ document/
-│  │  │  │     ├─ DocumentPreview.tsx (5 lines)
-│  │  │  │     ├─ GenerationProgress.tsx (5 lines)
-│  │  │  │     ├─ FileUploadSection.tsx (12 lines)
-│  │  │  │     ├─ DocumentForm.tsx (14 lines)
-│  │  │  │     └─ DocumentGenerator.tsx (13 lines)
-│  │  │  └─ hooks/
-│  │  │     └─ ...
 │  │  └─ ...
 │  └─ api/
 │     ├─ src/
-│     │  ├─ openai.ts (591 lines)
-│     │  ├─ storage.ts (532 lines)
+│     │  ├─ openai/
+│     │  │  ├─ types.ts (12 lines)
+│     │  │  ├─ promptTemplates.ts (19 lines)
+│     │  │  ├─ service.ts (48 lines)
+│     │  │  └─ index.ts (1 line)
+│     │  ├─ openai.ts (1 line, 엔트리포인트)
+│     │  ├─ storage/
+│     │  │  ├─ types.ts (20 lines)
+│     │  │  ├─ utils.ts (5 lines)
+│     │  │  ├─ service.ts (14 lines)
+│     │  │  ├─ controller.ts (8 lines)
+│     │  │  └─ index.ts (1 line)
+│     │  ├─ storage.ts (1 line, 엔트리포인트)
 │     │  ├─ routes.ts (234 lines)
 │     │  ├─ file-processor.ts (131 lines)
 │     │  ├─ document-generator.ts (65 lines)
@@ -60,29 +65,24 @@
 │     │     │  ├─ PromptBuilder.ts (6 lines)
 │     │     │  └─ types.ts (12 lines)
 │     │     └─ document/
-│     │        ├─ DocumentService.ts (1 lines)
+│     │        ├─ DocumentService.ts (1 line)
 │     │        ├─ PptxGenerator.ts (8 lines)
 │     │        ├─ PdfGenerator.ts (7 lines)
 │     │        └─ types.ts (6 lines)
 │     └─ ...
 ├─ archive/
-│  ├─ frontend/
-│  │  └─ src/
-│  │     ├─ utils/
-│  │     │  ├─ FileUploader.ts (48 lines)
-│  │     │  └─ config.ts (1 lines)
-│  │     └─ components/
-│  │        ├─ document-generator.tsx (178 lines)
-│  │        └─ FileUploader.tsx (22 lines)
-│  └─ ...
+│  └─ ... (백업/예전 자료)
+├─ docs/
+│  └─ project_plan.md
+├─ attached_assets/
+│  └─ ... (이미지, PDF 등 첨부파일)
+├─ uploads/
+│  └─ ... (업로드 파일)
 └─ ...
 ```
 
-## 200줄 이상 주요 파일
-- apps/web/components/document-generator.tsx (523 lines)
-- apps/web/pages/dashboard.tsx (494 lines)
-- apps/api/src/openai.ts (591 lines)
-- apps/api/src/storage.ts (532 lines)
+## 200줄 이상 단일 파일 현황
+- **현재 200줄 이상 단일 소스 파일 없음** (모든 대형 파일 역할별로 완전 분리/모듈화)
 
 (2024-06-01 기준, 리팩토링 및 구조화 완료)
 
@@ -161,103 +161,94 @@ uploads/               # 업로드 파일(배포시 .gitignore 추천)
 .
 ├── apps
 │   ├── api
-│   │   ├── package.json
-│   │   ├── package-lock.json
-│   │   ├── tsconfig.json
-│   │   └── src
-│   │       ├── db.ts
-│   │       ├── document-generator.ts
-│   │       ├── file-processor.ts
-│   │       ├── index.ts
-│   │       ├── openai.ts
-│   │       ├── routes.ts
-│   │       ├── storage.ts
-│   │       ├── vite.ts
-│   │       └── services
-│   │           ├── ai
-│   │           │   ├── OpenAIService.ts
-│   │           │   ├── PromptBuilder.ts
-│   │           │   └── types.ts
-│   │           └── document
-│   │               ├── DocumentService.ts
-│   │               ├── PdfGenerator.ts
-│   │               ├── PptxGenerator.ts
-│   │               └── types.ts
+│   │   ├── package.json (29 lines)
+│   │   ├── tsconfig.json (32 lines)
+│   │   ├── src
+│   │   │   ├── routes.ts (237 lines)
+│   │   │   ├── db.ts (48 lines)
+│   │   │   ├── index.ts (5 lines)
+│   │   │   ├── vite.ts (86 lines)
+│   │   │   ├── file-processor.ts (131 lines)
+│   │   │   ├── services
+│   │   │   │   ├── document-generator.ts (52 lines)
+│   │   │   │   ├── document
+│   │   │   │   │   ├── PptxGenerator.ts (7 lines)
+│   │   │   │   │   ├── PdfGenerator.ts (4 lines)
+│   │   │   │   │   ├── DocumentService.ts (1 line)
+│   │   │   │   │   ├── types.ts (6 lines)
+│   │   │   │   ├── ai
+│   │   │   │   │   ├── types.ts (12 lines)
+│   │   │   │   │   ├── OpenAIService.ts (20 lines)
+│   │   │   │   │   ├── PromptBuilder.ts (6 lines)
+│   │   │   ├── storage
+│   │   │   │   ├── types.ts (21 lines)
+│   │   │   │   ├── controller.ts (15 lines)
+│   │   │   │   ├── utils.ts (6 lines)
+│   │   │   │   ├── service.ts (14 lines)
+│   │   │   │   ├── index.ts (1 line)
+│   │   │   ├── openai
+│   │   │   │   ├── promptTemplates.ts (20 lines)
+│   │   │   │   ├── index.ts (1 line)
+│   │   │   │   ├── service.ts (48 lines)
+│   │   │   │   ├── types.ts (12 lines)
+│   │   │   └── services
+│   │   │       └── ai
+│   │   │           └── types.ts (12 lines)
 │   └── web
-│       ├── package.json
-│       ├── package-lock.json
-│       ├── tsconfig.json
-│       ├── App.tsx
-│       ├── main.tsx
-│       ├── index.css
-│       ├── index.html
-│       ├── components
-│       │   ├── document-generator.tsx
-│       │   ├── presentation-viewer.tsx
-│       │   └── ui
-│       │       └── ... (UI 컴포넌트 다수)
+│       ├── App.tsx (33 lines)
+│       ├── main.tsx (6 lines)
+│       ├── index.html (13 lines)
+│       ├── index.css (151 lines)
+│       ├── pages
+│       │   ├── dashboard.tsx (240 lines)
+│       │   └── not-found.tsx (22 lines)
+│       │   ├── dashboard
+│       │   │   ├── FeatureCards.tsx (82 lines)
+│       │   │   ├── RecentDocuments.tsx (78 lines)
+│       │   │   ├── StatsCards.tsx (61 lines)
+│       │   │   ├── index.ts (6 lines)
+│       │   │   ├── CompanyInfoPanel.tsx (52 lines)
+│       │   │   ├── useDashboardData.ts (22 lines)
+│       │   │   ├── types.ts (22 lines)
+│       │   └── components
+│       │       ├── document-generator.tsx (523 lines)
+│       │       ├── presentation-viewer.tsx (156 lines)
+│       │       └── ui
+│       │           ├── card.tsx (80 lines)
+│       │           ├── toaster.tsx (34 lines)
+│       │           ├── tooltip.tsx (31 lines)
+│       │           └── ... (생략, 40+개 UI 컴포넌트)
+│       ├── lib
 │       ├── hooks
-│   │   ├── use-mobile.tsx
-│   │   └── use-toast.ts
-│   │   ├── lib
-│   │   │   ├── document-api.ts
-│   │   │   ├── queryClient.ts
-│   │   │   └── utils.ts
-│   │   ├── pages
-│   │   │   ├── dashboard.tsx
-│   │   │   └── not-found.tsx
-│   │   └── ...
-│   └── ...
-├── packages
-│   ├── config
-│   └── shared
-│       ├── package.json
-│       ├── package-lock.json
-│       ├── tsconfig.json
 │       └── src
-│           └── schema.ts
-├── types
-├── Noto_Sans_KR
-│   ├── NotoSansKR-VariableFont_wght.ttf
-│   ├── OFL.txt
-│   ├── README.txt
-│   └── static
-│       ├── NotoSansKR-Black.ttf
-│       ├── NotoSansKR-Bold.ttf
-│       ├── NotoSansKR-ExtraBold.ttf
-│       ├── NotoSansKR-ExtraLight.ttf
-│       ├── NotoSansKR-Light.ttf
-│       ├── NotoSansKR-Medium.ttf
-│       ├── NotoSansKR-Regular.ttf
-│       ├── NotoSansKR-SemiBold.ttf
-│       └── NotoSansKR-Thin.ttf
-├── archive
-│   ├── backend
-│   ├── frontend
-│   ├── server
+├── packages
 │   ├── shared
-│   ├── client
-│   ├── 실행.md
-│   └── 프로그램.md
-├── docs
-│   └── project_plan.md
-├── attached_assets
-│   └── ... (이미지, PDF 등 첨부파일)
-├── uploads
-│   └── ... (업로드 파일)
-├── .config
-│   └── npm
-│       └── node_global
-├── .gitignore
-├── README.md
-├── drizzle.config.ts
-├── package.json
-├── package-lock.json
-├── postcss.config.js
-├── tailwind.config.ts
-├── tsconfig.json
-├── vite.config.ts
-└── components.json
+│   │   ├── package.json (13 lines)
+│   │   ├── tsconfig.json (10 lines)
+│   │   ├── src
+│   │   │   ├── schema.ts (56 lines)
+│   │   │   ├── schema.js (44 lines)
+│   ├── docs
+│   │   └── project_plan.md (39 lines)
+│   ├── archive
+│   │   ├── server
+│   │   │   ├── storage.ts (532 lines)
+│   │   │   ├── routes.ts (234 lines)
+│   │   │   ├── db.ts (48 lines)
+│   │   │   ├── index.ts (72 lines)
+│   │   │   ├── vite.ts (86 lines)
+│   │   │   ├── services
+│   │   │   │   ├── file-processor.ts (131 lines)
+│   │   │   │   ├── openai.ts (591 lines)
+│   │   │   │   ├── document-generator.ts (65 lines)
+│   │   │   └── services
+│   │   │       └── ai
+│   │   │           └── types.ts (12 lines)
+│   │   └── 실행_old.md (140 lines)
+│   └── 프로그램.md (77 lines)
+├── README.md (52 lines)
+├── tree.md (업데이트됨)
+├── ... 기타 설정/환경 파일
 ```
 
 - `node_modules`, 빌드 산출물 등은 생략

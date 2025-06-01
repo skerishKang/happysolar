@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, timestamp, jsonb } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, timestamp, jsonb } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -16,7 +16,7 @@ export const documents = pgTable("documents", {
   formData: jsonb("form_data").notNull(), // Original form input data
   status: text("status").notNull().default("completed"), // 'generating', 'completed', 'error'
   createdAt: timestamp("created_at").notNull().defaultNow(),
-  userId: integer("user_id").references(() => users.id).default(null),
+  userId: integer("user_id").references(() => users.id).default(null as any),
 });
 
 export const company = pgTable("company", {
@@ -48,9 +48,9 @@ export const documentGenerationSchema = z.object({
   uploadedFiles: z.array(z.any()).optional(),
 });
 
-export type InsertUser = z.infer<typeof insertUserSchema>;
+// export type InsertUser = z.infer<typeof insertUserSchema>;
+// export type InsertDocument = z.infer<typeof insertDocumentSchema>;
 export type User = typeof users.$inferSelect;
-export type InsertDocument = z.infer<typeof insertDocumentSchema>;
 export type Document = typeof documents.$inferSelect;
 export type Company = typeof company.$inferSelect;
 export type DocumentGenerationRequest = z.infer<typeof documentGenerationSchema>;

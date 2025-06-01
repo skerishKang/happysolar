@@ -1,10 +1,11 @@
-import { User, Document, Company, InsertDocument } from "@shared/schema";
+import { User, Document, Company } from "@shared/shared/schema";
+// type InsertDocument = any;
 
 export interface IStorage {
   getUser(id: number): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
   createUser(userData: { username: string; password: string }): Promise<User>;
-  createDocument(documentData: InsertDocument): Promise<Document>;
+  createDocument(documentData: any): Promise<Document>;
   getDocument(id: string): Promise<Document | undefined>;
   getDocuments(userId?: number): Promise<Document[]>;
   getRecentDocuments(limit: number): Promise<Document[]>;
