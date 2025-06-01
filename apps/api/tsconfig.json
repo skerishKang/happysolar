@@ -23,7 +23,7 @@
     "baseUrl": "./",
     "paths": {
       "@/*": ["../web/src/*"],
-      "@shared/*": ["../../packages/shared/dist/*"]
+      "@shared/*": ["../../packages/shared/src/*"]
     }
   },
   "include": [

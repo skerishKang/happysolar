@@ -1,4 +1,4 @@
-import * as schema from "@shared/shared/schema";
+import * as schema from "@shared/schema";
 
 const dbUrl = process.env.DATABASE_URL || "";
 

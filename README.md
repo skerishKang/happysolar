@@ -10,6 +10,8 @@
 ├── packages/
 │   └── shared/ # 공통 타입/스키마
 ├── docs/      # 문서
+├── assets/    # 이미지, 폰트 등 정적 자산
+├── backup/    # 예전 자료/백업 폴더
 ├── uploads/   # 업로드 파일
 ├── .env       # 환경변수 파일 (루트)
 ├── package.json (monorepo 관리)
@@ -41,6 +43,8 @@ npm run build
 - `apps/api` : 백엔드(Express, TypeScript)
 - `packages/shared` : 공통 타입/스키마
 - `docs` : 프로젝트 문서
+- `assets` : 이미지, 폰트 등 정적 자산 (ex: `assets/fonts/Noto_Sans_KR/`)
+- `backup` : 예전 자료/백업 폴더 (구 archive)
 - `uploads` : 업로드 파일 저장소
 
 ## 환경변수 예시

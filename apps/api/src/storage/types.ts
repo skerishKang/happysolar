@@ -1,4 +1,4 @@
-import { User, Document, Company } from "@shared/shared/schema";
+import { User, Document, Company } from "@shared/schema";
 // type InsertDocument = any;
 
 export interface IStorage {

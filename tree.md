@@ -6,7 +6,7 @@
 
 ```
 .
-├─ apps/
+├─ apps/                  # 프론트엔드/백엔드 앱
 │  ├─ web/
 │  │  ├─ components/
 │  │  │  ├─ document-generator/
@@ -70,14 +70,13 @@
 │     │        ├─ PdfGenerator.ts (7 lines)
 │     │        └─ types.ts (6 lines)
 │     └─ ...
-├─ archive/
-│  └─ ... (백업/예전 자료)
-├─ docs/
-│  └─ project_plan.md
-├─ attached_assets/
-│  └─ ... (이미지, PDF 등 첨부파일)
-├─ uploads/
-│  └─ ... (업로드 파일)
+├─ packages/              # 공통 모듈/타입
+│  └─ shared/
+├─ docs/                  # 프로젝트 문서
+├─ assets/                # 이미지, 폰트 등 정적 자산
+├─ backup/                # 예전 자료/백업 폴더 (구 archive)
+├─ uploads/               # 업로드 파일 저장소
+├─ 실행.md                # 운영팀/리더 참고용 체크리스트(삭제/이동X)
 └─ ...
 ```
 
@@ -180,20 +179,27 @@ uploads/               # 업로드 파일(배포시 .gitignore 추천)
 │   │   │   │   │   ├── types.ts (12 lines)
 │   │   │   │   │   ├── OpenAIService.ts (20 lines)
 │   │   │   │   │   ├── PromptBuilder.ts (6 lines)
-│   │   │   ├── storage
-│   │   │   │   ├── types.ts (21 lines)
-│   │   │   │   ├── controller.ts (15 lines)
-│   │   │   │   ├── utils.ts (6 lines)
-│   │   │   │   ├── service.ts (14 lines)
-│   │   │   │   ├── index.ts (1 line)
-│   │   │   ├── openai
-│   │   │   │   ├── promptTemplates.ts (20 lines)
-│   │   │   │   ├── index.ts (1 line)
-│   │   │   │   ├── service.ts (48 lines)
-│   │   │   │   ├── types.ts (12 lines)
+│   │   │   │   │   └── types.ts (12 lines)
+│   │   │   │   ├── storage
+│   │   │   │   │   ├── types.ts (21 lines)
+│   │   │   │   │   ├── controller.ts (15 lines)
+│   │   │   │   │   ├── utils.ts (6 lines)
+│   │   │   │   │   ├── service.ts (14 lines)
+│   │   │   │   │   ├── index.ts (1 line)
+│   │   │   │   ├── openai
+│   │   │   │   │   ├── promptTemplates.ts (20 lines)
+│   │   │   │   │   ├── index.ts (1 line)
+│   │   │   │   │   ├── service.ts (48 lines)
+│   │   │   │   │   ├── types.ts (12 lines)
+│   │   │   │   └── services
+│   │   │   │   └── ai
+│   │   │   │       └── types.ts (12 lines)
 │   │   │   └── services
 │   │   │       └── ai
 │   │   │           └── types.ts (12 lines)
+│   │   └── services
+│   │       └── ai
+│   │           └── types.ts (12 lines)
 │   └── web
 │       ├── App.tsx (33 lines)
 │       ├── main.tsx (6 lines)
@@ -210,16 +216,16 @@ uploads/               # 업로드 파일(배포시 .gitignore 추천)
 │       │   │   ├── CompanyInfoPanel.tsx (52 lines)
 │       │   │   ├── useDashboardData.ts (22 lines)
 │       │   │   ├── types.ts (22 lines)
-│       │   └── components
-│       │       ├── document-generator.tsx (523 lines)
-│       │       ├── presentation-viewer.tsx (156 lines)
-│       │       └── ui
-│       │           ├── card.tsx (80 lines)
-│       │           ├── toaster.tsx (34 lines)
-│       │           ├── tooltip.tsx (31 lines)
-│       │           └── ... (생략, 40+개 UI 컴포넌트)
-│       ├── lib
-│       ├── hooks
+│       │   │   └── components
+│       │   │       ├── document-generator.tsx (523 lines)
+│       │   │       ├── presentation-viewer.tsx (156 lines)
+│       │   │       └── ui
+│       │   │           ├── card.tsx (80 lines)
+│       │   │           ├── toaster.tsx (34 lines)
+│       │   │           ├── tooltip.tsx (31 lines)
+│       │   │           └── ... (생략, 40+개 UI 컴포넌트)
+│       │   ├── lib
+│       │   └── hooks
 │       └── src
 ├── packages
 │   ├── shared
@@ -228,6 +234,8 @@ uploads/               # 업로드 파일(배포시 .gitignore 추천)
 │   │   ├── src
 │   │   │   ├── schema.ts (56 lines)
 │   │   │   ├── schema.js (44 lines)
+│   │   │   └── types.ts (12 lines)
+│   │   └── types.ts (12 lines)
 │   ├── docs
 │   │   └── project_plan.md (39 lines)
 │   ├── archive

@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { DatabaseStorage } from "./storage";
-import { documentGenerationSchema } from "@shared/shared/schema";
+import { documentGenerationSchema } from "@shared/schema";
 import { generateDocument } from "./services/document-generator";
 import multer from "multer";
 import path from "path";
